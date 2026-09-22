@@ -2,8 +2,8 @@
 id: 003
 title: "Research: 小程序媒体上传与 COS 直传/播放"
 labels: [wayfinder:research]
-status: open
-assignee:
+status: closed
+assignee: claude
 blocked-by: []
 ---
 
@@ -19,3 +19,7 @@ blocked-by: []
 6. Go 侧 SDK 选型（tencentyun/cos-go-sdk-v5）与桶/CAM 角色最小权限设计。
 
 输出写入 `docs/research/003-cos-direct-upload.md`，结论要给出明确推荐（选型 A/B + 理由），供 API 契约 ticket 引用。
+
+## Resolution
+
+结论见 `docs/research/003-cos-direct-upload.md`（网络被拦截，基于内部知识，含"需验证"清单）。推荐：上传走 **选型 A —— STS 临时密钥 + cos-wx-sdk-v5 分片直传**（wx.uploadFile 与预签名 PUT 语义不匹配且无法分片）；下载/播放用后端预签名 GET URL（Range 原生支持）；confirm 端点 + 后端 HEAD 校验落库；封面用 chooseMedia 的 thumbTempFilePath 上传，不引入 CI/转码；Go 用 cos-go-sdk-v5 + tencentcloud STS，CAM 上传角色仅写 uploads/ 前缀。
