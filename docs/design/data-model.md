@@ -41,13 +41,27 @@ type Guardianship struct {
 
 ```go
 type Class struct {
-    ID         uint64 `gorm:"primaryKey"`
-    Name       string `gorm:"size:64"`
-    Visibility string `gorm:"size:10;default:private"` // public | private
-    InviteCode string `gorm:"uniqueIndex;size:16"`     // 私密班扫码/链接加入
-    CreatedBy  uint64
-    CreatedAt  time.Time
+    ID           uint64 `gorm:"primaryKey"`
+    Name         string `gorm:"size:64"`
+    Visibility   string `gorm:"size:10;default:private"` // public | private
+    JoinApproval bool   `gorm:"default:false"`           // 公开班加入是否需 admin 审批（私密班凭邀请码绕过）
+    InviteCode   string `gorm:"uniqueIndex;size:16"`     // 私密班扫码/链接加入
+    CreatedBy    uint64
+    CreatedAt    time.Time
 }
+
+// 公开班的加入申请（join_approval=true 时）；无审批的加入自动 approved 并直接建 member
+type ClassJoinRequest struct {
+    ID        uint64 `gorm:"primaryKey"`
+    ClassID   uint64 `gorm:"index"`
+    UserID    uint64
+    Status    string `gorm:"size:10;default:pending"` // pending | approved | rejected
+    CreatedAt time.Time
+    DecidedBy *uint64
+    DecidedAt *time.Time
+}
+// unique index uk_class_user_pending (class_id, user_id) WHERE status='pending'
+// —— GORM 用应用层校验防重复 pending 申请
 
 type ClassMember struct {
     ID      uint64 `gorm:"primaryKey"`
