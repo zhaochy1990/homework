@@ -2,8 +2,8 @@
 id: 010
 title: "Grilling: 数据模型与状态机"
 labels: [wayfinder:grilling]
-status: open
-assignee:
+status: closed
+assignee: claude
 blocked-by: []
 ---
 
@@ -17,3 +17,16 @@ blocked-by: []
 - 状态机：Session/打卡/媒体审核（检测中→通过/拒绝）的生命周期。
 
 产出：表结构设计文档 `docs/design/data-model.md`（含 ER 概图），经用户确认后关闭。
+
+## Resolution
+
+产出 `docs/design/data-model.md`（17 张表的 GORM 定义 + 履约/streak 计算规范 + 操作影响矩阵 10 条 + 状态机）。两轮 grilling 敲定的关键决策：
+
+- Q1 删除规则：有打卡的 Session 禁删；已勾选 todo 可删但级联清勾选、需二次确认。
+- Q2 迟建不追溯：Session 仅当 created_at 早于履约截止时构成义务（履约义务定义进 CONTEXT.md）。
+- Q3 streak 存储：事件驱动计数器表（事务内 +1、同日同科目幂等）+ 惰性中断检测 + 每日校准任务对账。
+- Q4 跨班同科目同日只 +1 一次；无作业日撤销不回溯已发放 +1。
+- Q5 打卡即冻结：打卡后该 session 勾选锁定；admin 后加 todo 对已打卡者显示"新增未完成"。
+- Q6 时区硬编码 Asia/Shanghai；日期字段存 CST 日期、时间戳存 UTC。
+- 补卡：+1 计实际打卡日；不能恢复已中断 streak。
+- 实现细节：todo 主键 ULID；users 由 JWT 首次请求 upsert；卡片异步生成重试；school_calendar.verified=false 不驱动业务逻辑。
