@@ -2,8 +2,8 @@
 id: 005
 title: "Research: 2026–2027 法定节假日与调休表"
 labels: [wayfinder:research]
-status: open
-assignee:
+status: closed
+assignee: claude
 blocked-by: []
 ---
 
@@ -16,3 +16,8 @@ blocked-by: []
 3. **数据准确性是硬要求**：以国务院公告为权威来源。若本环境网络受限无法核实，必须输出"未经核实的草稿"并逐条标注待验证，不得把不确定的调休安排当作事实输出；宁缺毋假。
 
 输出写入 `docs/research/005-school-calendar.md`（含 JSON 种子数据）。
+
+## Resolution
+
+产出：`docs/research/005-school-calendar.md`。本环境网络被拦（WebSearch 403 / WebFetch 域名拦截），无法访问国办通知原文，故输出"未经核实的草稿"。
+仅收录规则可推导的 2026 年 13 个法定假日日（JSON，`verified: false`，逐条标注待验证）；全部调休补班日期与连休范围**未收录**（宁缺毋假，2026 清明 4/5、劳动 5/2、国庆 10/3 逢周末必有补假日但日期不可推导）；2027 通知未发布，仅附推导落点、不入种子数据。**种子数据须经用户对照官方通知核验后才能导入。**
