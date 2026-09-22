@@ -1,6 +1,7 @@
 # API 契约 v1
 
 > 产出自 wayfinder ticket「Grilling: API 契约设计」。上游依据：`docs/design/data-model.md`（010）、`docs/research/001-stride-auth.md`（认证契约）、`docs/research/003-cos-direct-upload.md`（上传/播放选型）。
+> 作业解析／入库两个端点已随 ticket「Grilling: LLM 作业解析与确认流设计」（012）修订为按学科分组形态，细节见 `docs/design/homework-parsing.md`。
 
 ## 1. 通用约定
 
@@ -30,7 +31,8 @@
 | 409 | `last_guardian` | 移除最后一个监护人 |
 | 409 | `class_not_empty` | 解散仍有孩子在班的班级 |
 | 409 | `admin_immutable` | admin 互踢/创建者被操作 |
-| 422 | `llm_parse_failed` | 解析失败（降级：手动录入待办） |
+| 422 | `llm_parse_failed` | 解析失败（降级：重试 → 手动录入待办） |
+| 422 | `content_blocked` | 作业原文或待办命中内容安全检测 |
 | 422 | `upload_mismatch` | confirm 时 HEAD 校验不符 |
 | 502 | `llm_unavailable` | DeepSeek 超时/不可达 |
 
@@ -115,8 +117,8 @@ POST /media/upload-tickets/{uploadId}/confirm   {sizeBytes, etag, durationSec?, 
 
 | 方法/路径 | 权限 | 说明 |
 |---|---|---|
-| `POST /classes/{classId}/homework/parse` | admin | `{subject, date, rawText}` → **同步**调 DeepSeek（Q2），返回草稿 `{subject, kind, date, startDate?, endDate?, holidayName?, todos: [{content, sortOrder}]}`，**不入库**。超时/失败 → 502/422，降级为手动录入 |
-| `POST /classes/{classId}/homework` | admin | 提交草稿（或手写 todos）入库。后端按上学日历判定 `kind`：上学日（含调休补班）→ day；休息日 → 自动定位所在连续休息段 → holiday Session（start/end 自动算）。冲突：409 `duplicate_session` / `no_homework_day_conflict` |
+| `POST /classes/{classId}/homework/parse` | admin | `{date, rawText, defaultSubject?}` → **同步**调 DeepSeek（30s 超时，不自动重试），返回**按学科分组**的草稿，**不入库**：`{groups: [{subject, target: new\|append, sessionId?, existingTodos?, kind, date, startDate?, endDate?, holidayName?, todos: [{content, estimatedMinutes}], notes}]}`。失败 → 502 `llm_unavailable` / 422 `llm_parse_failed`，前端给"重试"（同模型同 prompt，温度 0.3）与"手动填写"两条路 |
+| `POST /classes/{classId}/homework` | admin | `{date, rawText, groups: [{subject, todos, notes?}]}`，**单事务**入库：先 `msgSecCheck`（命中 → 422 `content_blocked`），再按上学日历对每个分组判 `kind`（上学日含调休补班 → day；休息日 → 自动定位连续休息段 → holiday，start/end 自动算）；`target=append` 并入已有 Session、`new` 新建。冲突**整单**拒绝并在响应中指明学科：409 `duplicate_session` / `no_homework_day_conflict` |
 | `PATCH /homework/{sessionId}` | admin | `{rawText?, todos: {add: [{content, sortOrder}], update: [{id, content?, sortOrder?}], remove: [id]}}`；todo id 不可变（ADR 0003）；remove 已勾选 todo 级联清勾选（前端二次确认） |
 | `DELETE /homework/{sessionId}` | admin | 有任何打卡 → 409 `session_has_checkins` |
 | `GET /classes/{classId}/homework?from=&to=` | 成员 | 班级视图（session + todos + 各孩子聚合勾选/打卡态，admin 管理用） |
@@ -145,7 +147,7 @@ POST /media/upload-tickets/{uploadId}/confirm   {sizeBytes, etag, durationSec?, 
 
 ## 4. 关键时序
 
-**发作业**：选科目 → 粘贴文字 → `POST /homework/parse`（同步，转圈 3~15s）→ 前端展示草稿可编辑 → `POST /homework` 入库。
+**发作业**：粘贴老师原文（可混科）→ `POST /homework/parse`（同步，转圈 3~15s，30s 超时）→ 确认页按学科分组编辑，每组标注"新建/追加"→ `POST /homework` 单事务入库。解析失败 → 管理员点"重试"（温度 0.3 重跑一次）→ 仍失败 → 手填页（多行文本框、单学科、原文并排展示）。
 
 **打卡**：勾完全部 todo →（可选）`upload-tickets(kind=checkin_video)` → 直传视频+封面 → `confirm` → `POST .../checkin {videoUploadId}` → 返回打卡记录 → 前端轮询 `GET /checkins/{id}/card` 至 `imageUrl` 就绪 → 保存/分享海报。
 
@@ -154,4 +156,8 @@ POST /media/upload-tickets/{uploadId}/confirm   {sizeBytes, etag, durationSec?, 
 ## 5. 与数据模型的联动修订
 
 - `classes` 增加 `join_approval BOOL DEFAULT false`（Q1）；
-- 新增表 `class_join_requests(id, class_id, user_id, status: pending|approved|rejected, created_at, decided_by?, decided_at)`，`unique(class_id, user_id, status=pending)` 防重复申请。
+- 新增表 `class_join_requests(id, class_id, user_id, status: pending|approved|rejected, created_at, decided_by?, decided_at)`，`unique(class_id, user_id, status=pending)` 防重复申请；
+- `todos` 增加 `estimated_minutes INT NULL`（大模型估算时长；NULL = 未估，0/负数非法）；
+- `homework_sessions` 增加 `notes TEXT`（"老师还提到"，来自解析的 `unparsed`，可编辑）；
+- 作业读端点的响应形状：todo 带 `estimatedMinutes`，Session 带 `notes`；手填路径产出的 todo `estimatedMinutes` 恒为 null；
+- `subject` 取值收紧为全局封闭枚举（ADR 0007），见 `docs/design/homework-parsing.md`。

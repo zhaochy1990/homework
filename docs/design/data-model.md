@@ -6,6 +6,8 @@
 
 MySQL 8，GORM。所有"日期"均为 Asia/Shanghai 日历日期（`DATE` 类型）；时间戳一律 UTC（`DATETIME(3)` 或 `TIMESTAMP`）。时区硬编码 CST，无海外需求。
 
+所有 `subject` 字段取同一份**全局封闭枚举**（ADR 0007）：语文/数学/英语/物理/化学/生物/历史/地理/道法/科学/体育/艺术/其他。以字符串存储、由代码内唯一常量表约束，不存在"班级自维护学科集合"这回事。
+
 ## 表定义（GORM 形态）
 
 ### 身份与家庭
@@ -136,7 +138,8 @@ type HomeworkSession struct {
     StartDate   *time.Time     // kind=holiday：连续休息日首日
     EndDate     *time.Time     // kind=holiday：末日（履约截止）
     HolidayName string `gorm:"size:32"` // "国庆"
-    RawText     string `gorm:"type:text"` // 管理员粘贴的老师原文
+    RawText     string `gorm:"type:text"` // 管理员粘贴的老师原文，原样保留
+    Notes       string `gorm:"type:text"` // "老师还提到"：解析出的 unparsed 拍平后可编辑
     CreatedBy   uint64
     CreatedAt   time.Time
 }
@@ -144,11 +147,12 @@ type HomeworkSession struct {
 
 // 待办——id 永不变更（ADR 0003），公开暴露 ULID
 type Todo struct {
-    ID        string `gorm:"primaryKey;size:26"` // ULID
-    SessionID uint64 `gorm:"index"`
-    Content   string `gorm:"size:512"` // 编辑只改这里
-    SortOrder int
-    CreatedAt time.Time
+    ID               string `gorm:"primaryKey;size:26"` // ULID
+    SessionID        uint64 `gorm:"index"`
+    Content          string `gorm:"size:512"` // 编辑只改这里
+    EstimatedMinutes *int   // 大模型估算的完成时长；NULL = 未估（手填路径一律 NULL），0/负数非法
+    SortOrder        int
+    CreatedAt        time.Time
 }
 
 // 勾选——孩子私有（ADR 0002）；打卡后冻结
@@ -235,7 +239,7 @@ type Streak struct {
 
 | # | 操作 | 勾选 | 打卡 | streak | 卡片 |
 |---|---|---|---|---|---|
-| 1 | admin 编辑 todo 内容 | 不变（id 稳定） | 不变 | 不变 | 不变（历史卡片不重绘） |
+| 1 | admin 编辑 todo 内容/预估时长 | 不变（id 稳定） | 不变 | 不变 | 不变（历史卡片不重绘） |
 | 2 | admin 新增 todo | 新 todo 全员未勾 | 已打卡者不受影响 | 不变 | 不变 |
 | 3 | admin 删除未勾选的 todo | 直接删 | — | 不变 | — |
 | 4 | admin 删除已勾选的 todo（二次确认） | 勾选级联清除 | 不变 | 不变 | 不变 |
