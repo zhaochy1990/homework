@@ -239,6 +239,14 @@ aside.panel{width:330px;flex:none;position:sticky;top:24px}
 .cal .d.rest{background:var(--pcard);color:#C3C3C3;border:1px solid var(--pline)}
 .cal .d.nhw{background:#FFF4E3;color:#C87D0D}
 .cal .d.today{outline:2px solid var(--pa);outline-offset:-2px}
+.mkrow{display:flex;gap:3px;justify-content:center;align-items:center;height:8px;margin-top:2px}
+.mk{width:7px;height:7px;background:currentColor;flex:none}
+.mk.dot{border-radius:50%}
+.mk.sq{border-radius:1.5px}
+.mk.dia{width:6px;height:6px;border-radius:1px;transform:rotate(45deg)}
+.mk.tri{width:0;height:0;background:none;border-left:4.5px solid transparent;border-right:4.5px solid transparent;border-bottom:8px solid currentColor}
+.mk.ok{color:#07C160}
+.mk.miss{color:#FA5151}
 .calarrow{
   display:block;margin:8px auto 0;border:none;background:none;color:#B9B9B9;
   font-size:13px;padding:2px 14px;transition:transform .25s;line-height:1;
@@ -624,17 +632,11 @@ PAGES.growth = function(){
   return head('成长') + `
   <div class="body">
     ${childChips()}
-    ${subjChips(state.calSubject, 'setCalSubject')}
     <div class="card">
-      <div class="rowline"><h3>打卡日历 · 9月</h3><span class="sub">${state.calSubject}</span></div>
-      ${calendarGrid(state.calSubject, !state.calOpen)}
+      <div class="rowline"><h3>打卡日历 · 9月</h3><span class="sub">${child().name} · 全科目</span></div>
+      ${calendarGrid(!state.calOpen)}
       <button class="calarrow ${state.calOpen?'open':''}" onclick="toggleCal()" aria-label="展开或收起整月">▼</button>
-      ${state.calOpen?`<div class="legend">
-        <span><i style="background:#E5F8EE"></i>已打卡</span>
-        <span><i style="background:#FDEBEB"></i>漏卡</span>
-        <span><i style="background:#F6F6F6;border:1px solid #E8E8E8"></i>休息日</span>
-        <span><i style="background:#FFF4E3"></i>无作业日</span>
-      </div>`:''}
+      ${state.calOpen?CAL_LEGEND:''}
     </div>
     <div class="card">
       <div class="rowline"><h3>打卡动态</h3><span class="sub">仅监护人可见</span></div>
@@ -666,23 +668,37 @@ PAGES.growth = function(){
 };
 function setCalSubject(s){ state.calSubject=s; render(); }
 
-function calendarGrid(subj, weekOnly){
+const SHAPES={语文:'dot',数学:'tri',英语:'sq',科学:'dia'};
+const CAL_LEGEND=`<div class="legend">
+  <span><span class="mk dot ok" style="display:inline-block;vertical-align:-1px"></span>语文</span>
+  <span><span class="mk tri ok" style="display:inline-block;vertical-align:-1px"></span>数学</span>
+  <span><span class="mk sq ok" style="display:inline-block;vertical-align:-1px"></span>英语</span>
+  <span><span class="mk dia ok" style="display:inline-block;vertical-align:-1px"></span>科学</span>
+  <span>绿=已打卡</span><span>红=漏卡</span>
+</div>`;
+function calendarGrid(weekOnly){
   const start=2; // 2026-09-01 是周二（网格以周日开头）
   const days=30, today=23;
   const curWeek=Math.floor((start+today-1)/7);
+  const subs=(D.sessions[state.child]||[]).map(s=>s.subject);
   let h='<div class="cal">'+'日一二三四五六'.split('').map(w=>`<span class="wd">${w}</span>`).join('');
   if(!weekOnly) for(let i=0;i<start;i++) h+='<span></span>';
   for(let d=1;d<=days;d++){
     const idx=start+d-1;
     if(weekOnly && Math.floor(idx/7)!==curWeek) continue;
     const dow=idx%7;
-    let cls='d', st='';
-    if(dow===0||dow===6){ cls+=' rest'; st='休'; }
-    else if(d===11){ cls+=' nhw'; st='无作业'; }
-    else if(d%7===5||d%7===1){ cls+=' miss'; st='漏'; }
-    else { cls+=' ok'; st='✓'; }
+    let cls='d', inner=`${d}`;
+    if(dow===0||dow===6){ cls+=' rest'; inner+='<span class="st">休</span>'; }
+    else if(d===11){ cls+=' nhw'; inner+='<span class="st">无作业</span>'; }
+    else if(d<=today){
+      const mks=subs.map((s,i)=>{
+        const st=((d+i*2)%7===5||(d+i*2)%7===1)?'miss':'ok';
+        return `<span class="mk ${SHAPES[s]||'dot'} ${st}"></span>`;
+      }).join('');
+      inner+=`<span class="mkrow">${mks}</span>`;
+    } else inner+='<span class="mkrow"></span>';
     if(d===today) cls+=' today';
-    h+=`<span class="${cls}">${d}<span class="st">${st}</span></span>`;
+    h+=`<span class="${cls}">${inner}</span>`;
   }
   return h+'</div>';
 }
@@ -692,19 +708,12 @@ function toggleCal(){ state.calOpen=!state.calOpen; render(); }
 PAGES.calendar = function(){
   return head('打卡日历') + `
   <div class="body">
-    ${subjChips(state.calSubject,'setCalSubject')}
     <div class="card">
-      <div class="rowline"><h3>9月 · ${state.calSubject}</h3><span class="sub">${child().name}</span></div>
-      ${calendarGrid(state.calSubject)}
-      <div class="legend">
-        <span><i style="background:#E5F8EE"></i>已打卡</span>
-        <span><i style="background:#FDEBEB"></i>漏卡</span>
-        <span><i style="background:#F6F6F6;border:1px solid #E8E8E8"></i>休息日</span>
-        <span><i style="background:#FFF4E3"></i>无作业日</span>
-      </div>
+      <div class="rowline"><h3>9月 · 全科目</h3><span class="sub">${child().name}</span></div>
+      ${calendarGrid(false)}
+      ${CAL_LEGEND}
       <div class="note">休息日无义务不加不断；假期 Session 期间未打卡会断（见 ADR 0004）。</div>
     </div>
-    <div class="card"><div class="rowline"><h3>各科连续打卡</h3><span class="sub">详情在成长数据里</span></div></div>
     <div style="height:12px"></div>
   </div>`;
 };
