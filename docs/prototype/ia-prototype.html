@@ -437,6 +437,7 @@ const state = {
   calSubject:'语文',
   calOpen:false,
   feedDate:null,
+  feedCount:3,
 };
 let parseTimer = null;
 
@@ -587,6 +588,51 @@ function totalTicked(cid){
 /* ================= 页面 ================= */
 const PAGES = {};
 
+/* 打卡动态：更早的历史（演示自动加载用） */
+const OLD_POSTS=[];
+(function(){
+  const subs=['语文','数学','英语'];
+  for(let d=18;d>=4;d--){
+    OLD_POSTS.push({date:`9月${d}日 周${'一二三四五六日'[(d+1)%7]}`, subject:subs[d%3],
+      text:['','今天也很顺利','朗读打卡','','坚持第'+(24-d)+'天'][d%5],
+      media: d%3===0?[['video','00:35']] : d%3===1?[['photo'],['photo']] : []});
+  }
+})();
+function postHTML(k){
+  const ch=D.children.find(x=>x.id===state.child);
+  const tiles=k.media.map(m=>m[0]==='video'
+    ? `<div style="position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden" class="mockimg" onclick="openViewer(['video','打卡视频 · ${k.subject}','${m[1]}'])"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;text-shadow:0 0 4px rgba(0,0,0,.6)">▶ ${m[1]}</span></div>`
+    : `<div class="mockimg" style="aspect-ratio:1;border-radius:6px;font-size:11px" onclick="openViewer(['photo','打卡照片 · ${k.subject}'])">照片</div>`).join('');
+  return `<div style="display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--pline)">
+    <div class="avatar" style="background:${ch.color}">${ch.name[0]}</div>
+    <div style="flex:1">
+      <div style="display:flex;align-items:center;gap:6px"><b style="font-size:14px">${ch.name}</b><span class="chip">${k.subject}</span></div>
+      <div class="sub" style="margin-top:1px">${k.date}</div>
+      ${k.text?`<div style="font-size:13.5px;margin:6px 0 2px">${k.text}</div>`:''}
+      ${k.media.length?`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;max-width:240px;margin-top:7px">${tiles}</div>`:''}
+      <div style="margin-top:8px"><span class="sub" style="color:var(--pa)" onclick="toast('该次打卡的海报 · 预签名 URL')" role="button">打卡卡片 ›</span></div>
+    </div>
+  </div>`;
+}
+let feedLoading=false;
+function loadMoreFeed(){
+  if(state.feedDate || feedLoading) return;
+  const all=D.checkins.concat(OLD_POSTS);
+  if(state.feedCount>=all.length){
+    const end=document.getElementById('feedend');
+    if(end) end.textContent='已经到底啦';
+    return;
+  }
+  feedLoading=true;
+  setTimeout(()=>{
+    const batch=all.slice(state.feedCount, state.feedCount+3);
+    const end=document.getElementById('feedend');
+    if(end) end.insertAdjacentHTML('beforebegin', batch.map(postHTML).join(''));
+    state.feedCount+=batch.length;
+    feedLoading=false;
+  }, 250);
+}
+
 /* ---- A 今日 ---- */
 PAGES.today = function(){
   const c=child();
@@ -647,33 +693,12 @@ PAGES.growth = function(){
           : '<span class="sub">点日历某天可只看那天</span>'}
       </div>
       ${(()=>{
-        const all=D.checkins.map(k=>Object.assign({},k,{day:+((k.date.match(/9月(\d+)日/)||[])[1]||0)}));
-        const shown=state.feedDate ? all.filter(k=>k.day===state.feedDate) : all.slice(0,3);
+        const all=D.checkins.concat(OLD_POSTS).map(k=>Object.assign({},k,{day:+((k.date.match(/9月(\d+)日/)||[])[1]||0)}));
+        const shown=state.feedDate ? all.filter(k=>k.day===state.feedDate) : all.slice(0,state.feedCount);
         if(!shown.length) return '<div class="empty">这一天还没有打卡记录</div>';
-        return shown.map(k=>{
-        const ch=D.children.find(x=>x.id===state.child);
-        const tiles=k.media.map(m=>m[0]==='video'
-          ? `<div style="position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden" class="mockimg" onclick="openViewer(['video','打卡视频 · ${k.subject}','${m[1]}'])"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;text-shadow:0 0 4px rgba(0,0,0,.6)">▶ ${m[1]}</span></div>`
-          : `<div class="mockimg" style="aspect-ratio:1;border-radius:6px;font-size:11px" onclick="openViewer(['photo','打卡照片 · ${k.subject}'])">照片</div>`).join('');
-        return `<div style="display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--pline)">
-          <div class="avatar" style="background:${ch.color}">${ch.name[0]}</div>
-          <div style="flex:1">
-            <div style="display:flex;align-items:center;gap:6px"><b style="font-size:14px">${ch.name}</b><span class="chip">${k.subject}</span></div>
-            <div class="sub" style="margin-top:1px">${k.date}</div>
-            ${k.text?`<div style="font-size:13.5px;margin:6px 0 2px">${k.text}</div>`:''}
-            ${k.media.length?`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;max-width:240px;margin-top:7px">${tiles}</div>`:''}
-            <div style="margin-top:8px"><span class="sub" style="color:var(--pa)" onclick="toast('该次打卡的海报 · 预签名 URL')" role="button">打卡卡片 ›</span></div>
-          </div>
-        </div>`;
-        }).join('');
+        return shown.map(postHTML).join('');
       })()}
-      ${!state.feedDate?`<div class="rowline" style="padding-top:6px" onclick="toast('更早的打卡分页加载：GET /checkins?from=&to=&page=')" role="button"><span class="sub" style="color:var(--pa)">加载更早的打卡 ›</span></div>`:''}
-    </div>
-    <div class="card">
-      <div class="rowline"><h3>打卡卡片</h3><span class="sub">最近 30 天</span></div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        ${[1,2,3].map(i=>`<div class="mockimg" style="width:96px;aspect-ratio:3/4" onclick="toast('卡片历史 · 预签名 URL 加载海报')">海报 ${i}</div>`).join('')}
-      </div>
+      <div id="feedend" class="empty" style="padding:4px 0"></div>
     </div>
     <div style="height:12px"></div>
   </div>` + tabbar(1);
@@ -1078,22 +1103,38 @@ PAGES.postDone = function(){
 };
 
 /* ---- 打卡弹层 / 成功 / 卡片 ---- */
+let sheetMedia=[];
 function openCheckin(cid,subj){
   const c=D.children.find(x=>x.id===cid);
+  sheetMedia=[];
   const scr=$screen();
   const ov=document.createElement('div'); ov.id='sheet'; ov.className='sheetmask';
   ov.innerHTML=`<div class="sheet">
     <h3>打卡 · ${c.name} · ${subj}</h3>
-    <div class="sub" style="text-align:center;margin-top:4px">可附上今天的照片 / 视频（可选，最多 9 个）</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px">
-      <div class="mockimg" style="aspect-ratio:1;border-radius:8px;font-size:11px" onclick="openViewer(['photo','打卡照片 · ${subj}'])">照片</div>
-      <div style="position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden" class="mockimg" onclick="openViewer(['video','打卡视频 · ${subj}','00:42'])"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;text-shadow:0 0 4px rgba(0,0,0,.6)">▶ 00:42</span></div>
-      <div class="dashbox" style="margin:0;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:20px" onclick="toast('wx.chooseMedia：照片/视频多选（合计≤9）')">＋</div>
-    </div>
+    <div class="sub" style="text-align:center;margin-top:4px">附上今天的照片 / 视频？可选，最多 9 个</div>
+    <div id="mediagrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px"></div>
     <button class="btn" style="margin-top:16px" onclick="doCheckin('${cid}','${subj}')">打卡</button>
     <button class="btn ghost" style="margin-top:8px;background:none;border:none;color:#999" onclick="closeSheet()">再想想</button>
   </div>`;
   scr.appendChild(ov);
+  renderSheetMedia(subj);
+}
+function renderSheetMedia(subj){
+  const g=document.getElementById('mediagrid'); if(!g) return;
+  const tiles=sheetMedia.map(m=> m[0]==='video'
+    ? `<div style="position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden" class="mockimg" onclick="openViewer(['video','打卡视频 · ${subj}','${m[1]}'])"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;text-shadow:0 0 4px rgba(0,0,0,.6)">▶ ${m[1]}</span></div>`
+    : `<div class="mockimg" style="aspect-ratio:1;border-radius:8px;font-size:11px" onclick="openViewer(['photo','打卡照片 · ${subj}'])">照片</div>`).join('');
+  const add = sheetMedia.length<9
+    ? `<div class="dashbox" style="margin:0;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:20px" onclick="addSheetMedia()">＋</div>` : '';
+  g.innerHTML=tiles+add;
+}
+function addSheetMedia(){
+  const i=sheetMedia.length;
+  if(i>=9) return;
+  sheetMedia.push(i%2===0?['photo']:['video','00:'+String(20+i%25).padStart(2,'0')]);
+  const subj=document.querySelector('#sheet h3').textContent.split(' · ')[2];
+  renderSheetMedia(subj);
+  if(sheetMedia.length===1) toast('真实实现：wx.chooseMedia 拍摄或相册多选 → STS 直传 → confirm');
 }
 function closeSheet(){ const el=document.getElementById('sheet'); if(el) el.remove(); }
 function doCheckin(cid,subj){
@@ -1160,6 +1201,12 @@ function render(){
       <div class="capsule"><span>•••</span><span>◉</span></div>
       ${(PAGES[top.id]||PAGES.today)(top.ctx||{})}
     </div>`;
+  if(top.id==='growth'){
+    const b=$screen().querySelector('.body');
+    if(b) b.addEventListener('scroll', ()=>{
+      if(b.scrollTop + b.clientHeight >= b.scrollHeight - 60) loadMoreFeed();
+    }, {passive:true});
+  }
 }
 
 function backToClass(){
