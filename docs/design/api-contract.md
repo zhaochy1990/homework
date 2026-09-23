@@ -93,7 +93,7 @@
 
 ```
 POST /media/upload-tickets          {kind, contentType, sizeBytes}
-  kind ∈ material_image | material_video | checkin_video | thumb | avatar
+  kind ∈ material_image | material_video | checkin_media | thumb | avatar
   → 200 {uploadId, objectKey, bucket, region,
          sts: {tmpSecretId, tmpSecretKey, sessionToken, expiredTime}}   // 30~60min，policy 限写 uploads/ 前缀
 
@@ -102,7 +102,7 @@ POST /media/upload-tickets/{uploadId}/confirm   {sizeBytes, etag, durationSec?, 
   → 超时未 confirm 的 ticket 由每日任务清理（孤儿对象/分片）
 ```
 
-客户端流程：取 ticket → cos-wx-sdk-v5 直传（视频分片）→ confirm → 拿 `objectKey` 去创建业务资源。视频封面用 `wx.chooseMedia` 的 `thumbTempFilePath` 作为 thumb 一并上传，confirm 时上报 `thumbObjectKey`。
+客户端流程：取 ticket → cos-wx-sdk-v5 直传（视频分片）→ confirm → 拿 `objectKey` 去创建业务资源。视频封面用 `wx.chooseMedia` 的 `thumbTempFilePath` 作为 thumb 一并上传，confirm 时上报 `thumbObjectKey`。打卡附件（照片/视频）同走 `checkin_media` kind。
 
 ### 3.6 学习资料
 
@@ -123,7 +123,7 @@ POST /media/upload-tickets/{uploadId}/confirm   {sizeBytes, etag, durationSec?, 
 | `DELETE /homework/{sessionId}` | admin | 有任何打卡 → 409 `session_has_checkins` |
 | `GET /classes/{classId}/homework?from=&to=` | 成员 | 班级视图（session + todos + 各孩子聚合勾选/打卡态，admin 管理用） |
 | `GET /children/{childId}/homework?date=YYYY-MM-DD` | 监护人 | ★ **当日聚合视图**（首页数据源）：跨班 session（当日 day + 生效中的 holiday）+ todo 勾选态 + 打卡态 + 无作业日标记 |
-| `GET /children/{childId}/homework/calendar?month=YYYY-MM` | 监护人 | 打卡日历：每日 `checked\|unchecked\|holiday_pending\|rest\|no_homework` + 每科目 streak 快照 |
+| `GET /children/{childId}/homework/calendar?month=YYYY-MM` | 监护人 | 打卡日历（**单张全科目日历**，前端按符号渲染）：每日 `{date, kind: school_day\|rest\|no_homework\|holiday, subjects: {"语文": "checked\|missed\|none", …}}`；仅含过去与当天，未来日期 `subjects` 为空 |
 
 ### 3.8 勾选与打卡
 
@@ -131,8 +131,8 @@ POST /media/upload-tickets/{uploadId}/confirm   {sizeBytes, etag, durationSec?, 
 |---|---|---|
 | `POST /children/{childId}/todos/{todoId}/tick` | 监护人 | 勾选；session 已打卡 → 409 `todo_frozen` |
 | `DELETE /children/{childId}/todos/{todoId}/tick` | 监护人 | 取消勾选（同上） |
-| `POST /children/{childId}/homework/{sessionId}/checkin` | 监护人 | `{videoUploadId?}`。校验：全部 todo 已勾（409 `not_all_ticked`）、非未来日期（400 `future_date_forbidden`）、未重复打卡（409 `already_checked_in`）→ 建打卡（终态）→ streak 事务内 +1 → 异步生成卡片 |
-| `GET /children/{childId}/checkins?from=&to=&page=` | 监护人 | 打卡历史（含视频 key、卡片状态） |
+| `POST /children/{childId}/homework/{sessionId}/checkin` | 监护人 | `{note?, media?: [{uploadId}]}`（附件照片/视频合计 ≤9，无独立发布入口）。校验：全部 todo 已勾（409 `not_all_ticked`）、非未来日期（400 `future_date_forbidden`）、未重复打卡（409 `already_checked_in`）→ 建打卡（终态）→ 附件落 `checkin_media` 并逐个过内容安全 → streak 事务内 +1 → 异步生成卡片 |
+| `GET /children/{childId}/checkins?from=&to=&page=` | 监护人 | 打卡动态（朋友圈式流，offset 分页；客户端默认取最近 3 条、滚动到底翻页）：含 `note`、`media: [{type, playbackUrl, thumbUrl, durationSec, secStatus}]`、卡片状态 |
 | `GET /checkins/{checkinId}/card` | 监护人 | `{imageUrl}`（海报预签名 URL；生成中→`{status: generating}`，客户端轮询） |
 
 ### 3.9 streak / 无作业日 / 日历
@@ -149,7 +149,7 @@ POST /media/upload-tickets/{uploadId}/confirm   {sizeBytes, etag, durationSec?, 
 
 **发作业**：粘贴老师原文（可混科）→ `POST /homework/parse`（同步，转圈 3~15s，30s 超时）→ 确认页按学科分组编辑，每组标注"新建/追加"→ `POST /homework` 单事务入库。解析失败 → 管理员点"重试"（温度 0.3 重跑一次）→ 仍失败 → 手填页（多行文本框、单学科、原文并排展示）。
 
-**打卡**：勾完全部 todo →（可选）`upload-tickets(kind=checkin_video)` → 直传视频+封面 → `confirm` → `POST .../checkin {videoUploadId}` → 返回打卡记录 → 前端轮询 `GET /checkins/{id}/card` 至 `imageUrl` 就绪 → 保存/分享海报。
+**打卡**：勾完全部 todo → 点「打卡」→ 弹层可附照片/视频（`upload-tickets(kind=checkin_media)` → 直传 → `confirm`，≤9 个）→ `POST .../checkin {note?, media?}` → 返回打卡记录 → 前端轮询 `GET /checkins/{id}/card` 至 `imageUrl` 就绪 → 保存/分享海报。
 
 **资料上传**：`upload-tickets(kind=material_video)` → 直传 → `confirm` → `POST /classes/{id}/materials {uploadId, unitId?}` → 内容安全异步检测 → 通过后成员可见。
 

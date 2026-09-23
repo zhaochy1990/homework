@@ -169,13 +169,24 @@ type TodoTick struct {
 ```go
 // 打卡——session 级、孩子维度、终态不可撤销
 type Checkin struct {
-    ID              uint64 `gorm:"primaryKey"`
-    SessionID       uint64 `gorm:"uniqueIndex:uk_session_child"`
-    ChildID         uint64 `gorm:"uniqueIndex:uk_session_child"`
-    CheckinDate     time.Time `gorm:"type:date"` // 实际打卡的 CST 日期（补卡即本日）
-    CheckedInAt     time.Time            // UTC 时间戳
-    VideoCosKey     string  `gorm:"size:512"` // 可空
-    VideoSecStatus  string  `gorm:"size:10"`  // 无视频为空串；有则 pending|pass|blocked
+    ID          uint64 `gorm:"primaryKey"`
+    SessionID   uint64 `gorm:"uniqueIndex:uk_session_child"`
+    ChildID     uint64 `gorm:"uniqueIndex:uk_session_child"`
+    CheckinDate time.Time `gorm:"type:date"` // 实际打卡的 CST 日期（补卡即本日）
+    CheckedInAt time.Time            // UTC 时间戳
+    Note        string `gorm:"size:512"`  // 家长一句话（打卡动态文字，可空）
+}
+
+// 打卡附件——照片/视频混存，合计 ≤9，随打卡一起发布（无独立入口）
+type CheckinMedia struct {
+    ID          uint64 `gorm:"primaryKey"`
+    CheckinID   uint64 `gorm:"index"`
+    Type        string `gorm:"size:10"`  // image | video
+    CosKey      string `gorm:"size:512"`
+    ThumbKey    string `gorm:"size:512"` // 视频封面（chooseMedia thumbTempFilePath）
+    SizeBytes   int64
+    DurationSec int    // video 专用
+    SecStatus   string `gorm:"size:10;default:pending"` // pending | pass | blocked（先审后显）
 }
 
 // 打卡卡片——异步生成
@@ -254,12 +265,13 @@ type Streak struct {
 
 ## 状态机
 
-**媒体审核**（`materials.sec_status` / `checkins.video_sec_status`，先审后显）：
+**媒体审核**（`materials.sec_status` / `checkin_media.sec_status`，先审后显）：
 
 ```
 文本:  创建时 msgSecCheck 同步检测 → pass | blocked
 媒体:  created → pending ──(wxa_media_check 消息推送回调, trace_id 幂等)──→ pass | blocked
        pending / blocked 对班级成员不可见；blocked 为终态；racy 内容 v1 从严按 blocked
+       打卡附件逐个附件独立审核（仅监护人可见，审核不通过时对该用户隐藏该附件）
 ```
 
 **打卡**：`created` 即终态（唯一约束 `session_id+child_id` 兜底不可重打）。
