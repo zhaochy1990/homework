@@ -14,16 +14,18 @@ import (
 	"github.com/zhaochy1990/homework/backend/internal/homework/httpx"
 	"github.com/zhaochy1990/homework/backend/internal/homework/middleware"
 	"github.com/zhaochy1990/homework/backend/internal/homework/model"
+	"github.com/zhaochy1990/homework/backend/internal/homework/textbook"
 	"github.com/zhaochy1990/homework/backend/internal/homework/user"
 	"gorm.io/gorm"
 )
 
 type Server struct {
-	cfg     *config.Config
-	db      *gorm.DB
-	users   *user.Store
-	family  *family.Store
-	invites *family.InviteSigner
+	cfg       *config.Config
+	db        *gorm.DB
+	users     *user.Store
+	family    *family.Store
+	invites   *family.InviteSigner
+	textbooks *textbook.Store
 }
 
 // New 装配全部依赖；公钥/邀请密钥解析失败即返回错误（拒绝启动）。
@@ -36,7 +38,11 @@ func New(cfg *config.Config, db *gorm.DB) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	s := &Server{cfg: cfg, db: db, users: user.NewStore(db), family: family.NewStore(db), invites: invites}
+	s := &Server{
+		cfg: cfg, db: db,
+		users: user.NewStore(db), family: family.NewStore(db), invites: invites,
+		textbooks: textbook.NewStore(db),
+	}
 	authMW := middleware.Auth(verifier.Verify)
 
 	mux := http.NewServeMux()
@@ -55,6 +61,13 @@ func New(cfg *config.Config, db *gorm.DB) (http.Handler, error) {
 	mux.Handle("POST /api/v1/guardianships/accept", protect(s.acceptGuardianship))
 	mux.Handle("DELETE /api/v1/children/{childId}/guardians/{userId}", protect(s.removeGuardian))
 	mux.Handle("DELETE /api/v1/children/{childId}/guardians/me", protect(s.quitGuardianship))
+
+	// 教材库（T06，api-contract §3.4）。
+	mux.Handle("POST /api/v1/textbooks", protect(s.createTextbook))
+	mux.Handle("GET /api/v1/textbooks", protect(s.listTextbooks))
+	mux.Handle("POST /api/v1/textbooks/{textbookId}/units", protect(s.addTextbookUnits))
+	mux.Handle("PUT /api/v1/classes/{classId}/textbooks", protect(s.setClassTextbook))
+	mux.Handle("GET /api/v1/classes/{classId}/textbooks", protect(s.listClassTextbooks))
 
 	return middleware.Logging(mux), nil
 }
