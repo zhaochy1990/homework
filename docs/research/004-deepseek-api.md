@@ -6,6 +6,8 @@
 > 下文所有**模型名、价格、上下文长度、限流参数均基于既有知识整理,接入前以官方文档为准**:
 > https://api-docs.deepseek.com/ (中文站: https://api-docs.deepseek.com/zh-cn/)
 > 本文档保证可靠的部分是:接口形态(OpenAI 兼容)、JSON mode 的使用模式、解析坑与降级策略——这些与具体版本号无关。
+>
+> **勘误(2026-09-23,实测)**:用真实 API Key 调 `GET https://api.deepseek.com/models`,本账号端点暴露的模型名是 **`deepseek-flash`(DeepSeek-V4.1-Flash)** 与 **`deepseek-v4-pro`**——没有 `deepseek-chat` / `deepseek-reasoner`。下文已按实测名改写;顺带实测 `deepseek-flash` 的 `context_window=1,048,576`、`max_output_tokens=393,216`(§1.3 的 128K 旧数字已过时),价格仍未核实。
 
 ## 1. 模型名、端点、上下文与定价
 
@@ -15,12 +17,12 @@ DeepSeek 的 API 层模型名历史上长期只有两个"别名"(stable aliases)
 
 | API 模型名 | 用途 | 说明 |
 |---|---|---|
-| `deepseek-chat` | 非推理 chat 模型 | 对话/抽取类任务,速度快 |
-| `deepseek-reasoner` | 推理模型(DeepSeek-R 系列 / thinking 模式) | 复杂推理,有可见的思维链,延迟高、输出 token 多 |
+| `deepseek-flash` | 非推理 chat 模型 | 对话/抽取类任务,速度快 |
+| `deepseek-v4-pro` | 推理模型(DeepSeek-R 系列 / thinking 模式) | 复杂推理,有可见的思维链,延迟高、输出 token 多 |
 
-关于"V4":截至本文撰写,DeepSeek 官方 API 暴露的一直是上述两个别名,**用户口中的"最新 V4 模型"大概率就是指 `deepseek-chat` 指向的最新底座版本**(V3 → V3.1 → V3.2 → …,官方通过别名滚动升级)。接入前以官方文档为准确认当时的映射关系;若官方已引入新的显式版本名(如 `deepseek-v4`),则通过配置切换。
+关于版本:本账号端点已暴露显式 V4 名称（`deepseek-flash` = DeepSeek-V4.1-Flash），不再是纯别名滚动。模型名一律走配置，接入前用 `GET /models` 或官方文档确认当时映射。
 
-**工程决策:模型名必须走配置**(环境变量/配置文件,如 `DEEPSEEK_MODEL=deepseek-chat`),并提供 `deepseek-reasoner` 作为可选的"难例重试"档位。不要在代码里出现任何字面量模型名。
+**工程决策:模型名必须走配置**(环境变量/配置文件,如 `DEEPSEEK_MODEL=deepseek-flash`),并提供 `deepseek-v4-pro` 作为可选的"难例重试"档位。不要在代码里出现任何字面量模型名。
 
 ### 1.2 端点(OpenAI 兼容)
 
@@ -30,7 +32,7 @@ DeepSeek 的 API 层模型名历史上长期只有两个"别名"(stable aliases)
 
 ### 1.3 上下文长度(以官方文档为准)
 
-- `deepseek-chat` / `deepseek-reasoner` 的对话上下文历史上为 **128K tokens** 量级。
+- `deepseek-flash` 实测 `context_window=1,048,576`(1M);`deepseek-v4-pro` 未查。作业文本远小于任何上限,上下文不是约束。
 - 单次**最大输出**有独立上限(数千 tokens 量级),作业解析输出远小于该值,不构成约束。
 - 作业文本典型长度:教师一段话 50–500 汉字 ≈ 50–500+ tokens,**上下文完全不是瓶颈**;瓶颈在延迟与限流。
 
@@ -40,8 +42,8 @@ DeepSeek 的 API 层模型名历史上长期只有两个"别名"(stable aliases)
 
 | 模型 | 输入(缓存命中/未命中) | 输出 |
 |---|---|---|
-| `deepseek-chat` | 低价(元级)/ 元级 | 元级 |
-| `deepseek-reasoner` | 略高于 chat | 约 2–4 倍于输入 |
+| `deepseek-flash` | 低价(元级)/ 元级 | 元级 |
+| `deepseek-v4-pro` | 略高于 chat | 约 2–4 倍于输入 |
 
 - DeepSeek 价格在历次版本更新中**只降不升**,V3.2 一代已降到输入约 $0.0x–0.3/M、输出约 $0.4/M 的量级。
 - 支持**上下文硬盘缓存**(前缀命中部分按大幅折扣计费)——我们的 system prompt + few-shot 固定前缀会天然命中缓存,实际成本进一步降低。
@@ -124,7 +126,7 @@ DeepSeek 官方对 API **没有公布硬性 QPS 上限**,按"高并发下返回 
 | 失败模式 | 检测 | 处置 |
 |---|---|---|
 | 网络错误 / 5xx / 429 | HTTP 状态、超时 | 指数退避重试 2 次(如 1s/4s),仍失败走降级 |
-| 超时 | context deadline(建议 30–60s;reasoner 模型可放宽) | 同上;超时切到 `deepseek-chat` 重试一次(若首调用用的 reasoner) |
+| 超时 | context deadline(建议 30–60s;推理档 `deepseek-v4-pro` 可放宽) | 同上;超时切到 `deepseek-flash` 重试一次(若首调用用的 `deepseek-v4-pro`) |
 | JSON 语法失败 / 截断 | `encoding/json` unmarshal error 或 `finish_reason=length` | 先试一次自动修复(若截断:按行截到最后完整 `}`);再重试 1 次;仍失败降级 |
 | JSON 合法但 schema 不符 | Go 侧 strict struct 校验(未知枚举值、缺 `todos` 字段) | 拼一个"你的输出不符合 schema,错误是 X,请严格按 schema 重新输出"的重试 prompt,重试 1 次 |
 | 内容安全拒绝 | 4xx + 官方 content_filter 错误码 / 空回复 | 不重试,直接标记该条"需人工录入",不阻塞其他条目 |
@@ -132,7 +134,7 @@ DeepSeek 官方对 API **没有公布硬性 QPS 上限**,按"高并发下返回 
 
 **降级路径(逐级)**:
 
-1. `deepseek-chat`(JSON mode)→ 2. 重试与自动修复 → 3. `deepseek-reasoner`(难例,单次)→ 4. **人工兜底:作业文本原样存库,前端展示"待整理"状态,教师/家长手工拆条**。
+1. `deepseek-flash`(JSON mode)→ 2. 重试与自动修复 → 3. `deepseek-v4-pro`(难例,单次)→ 4. **人工兜底:作业文本原样存库,前端展示"待整理"状态,教师/家长手工拆条**。
 
 最终必须有第 4 级:AI 永远只是加速,不能成为教师提交作业的单点故障。所有失败样本落库(原始文本 + 错误类型),作为后续 prompt 迭代(012 ticket 之后)的评测集。
 
@@ -142,7 +144,7 @@ DeepSeek 官方对 API **没有公布硬性 QPS 上限**,按"高并发下返回 
 
 ### 结论要点
 
-- 模型名用 `deepseek-chat`(默认)/ `deepseek-reasoner`(难例),**全部走配置**;"V4"即 chat 别名背后的最新底座,接入前以官方文档为准。
+- 模型名用 `deepseek-flash`(默认)/ `deepseek-v4-pro`(难例),**全部走配置**;名称以 `GET /models` / 官方文档为准。
 - JSON mode 可用但无 schema 强制 → Go 侧 strict 校验 + 定向重试是必须的。
 - schema 草案见 §2.2,核心安全阀是 `confidence` 与 `unparsed`。
 - 降级终点是"原文存库 + 人工拆条",AI 失败不能阻塞提交。

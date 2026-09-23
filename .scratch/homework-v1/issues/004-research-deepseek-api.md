@@ -20,4 +20,4 @@ blocked-by: []
 
 ## Resolution
 
-见 `docs/research/004-deepseek-api.md`(外部网络受限,模型名/价格/上下文均标注"接入前以官方文档为准")。要点:模型用 `deepseek-chat`(默认)/`deepseek-reasoner`(难例),全走配置;JSON mode 可用但无 schema 强制,需 Go 侧 strict 校验+定向重试;schema 草案含 `confidence`/`unparsed` 安全阀;降级终点是原文存库+人工拆条。
+见 `docs/research/004-deepseek-api.md`(外部网络受限,模型名/价格/上下文均标注"接入前以官方文档为准")。要点:模型用 `deepseek-flash`(默认)/`deepseek-v4-pro`(难例),全走配置;JSON mode 可用但无 schema 强制,需 Go 侧 strict 校验+定向重试;schema 草案含 `confidence`/`unparsed` 安全阀;降级终点是原文存库+人工拆条。

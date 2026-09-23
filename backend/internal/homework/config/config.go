@@ -19,6 +19,7 @@ type Config struct {
 	Auth              Auth
 	WeChat            WeChat
 	COS               COS
+	DeepSeek          DeepSeek
 	InviteTokenSecret string // 监护人邀请 token 的 HMAC 密钥
 }
 
@@ -57,6 +58,16 @@ type COS struct {
 	SecretKey   string
 	STSTTL      time.Duration // 临时密钥/上传会话有效期，默认 45m
 	PlaybackTTL time.Duration // 预签名播放 URL 有效期，默认 2h
+}
+
+// DeepSeek 是作业解析的 LLM 配置（T10，research/004）。
+// 模型名一律走配置、禁止硬编码；HardModel 预留给难例档位。
+type DeepSeek struct {
+	BaseURL   string // 默认 https://api.deepseek.com
+	APIKey    string
+	Model     string        // 默认 deepseek-flash
+	HardModel string        // 默认 deepseek-v4-pro
+	Timeout   time.Duration // 单次解析超时，默认 30s
 }
 
 // DSN 使用 UTC 连接时区；日期列在应用层以 UTC 零点表示 CST 日历日。
@@ -130,6 +141,13 @@ func build(dot map[string]string, lookup func(string) (string, bool)) (*Config, 
 			SecretKey:   get("TENCENTCLOUD_SECRET_KEY", ""),
 			STSTTL:      getDur("COS_STS_TTL", 45*time.Minute),
 			PlaybackTTL: getDur("COS_PLAYBACK_TTL", 2*time.Hour),
+		},
+		DeepSeek: DeepSeek{
+			BaseURL:   get("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
+			APIKey:    get("DEEPSEEK_API_KEY", ""),
+			Model:     get("DEEPSEEK_MODEL", "deepseek-flash"),
+			HardModel: get("DEEPSEEK_MODEL_HARD", "deepseek-v4-pro"),
+			Timeout:   getDur("DEEPSEEK_TIMEOUT", 30*time.Second),
 		},
 	}, nil
 }

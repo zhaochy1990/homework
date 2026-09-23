@@ -48,7 +48,7 @@ POST /classes/{classId}/homework  ← 单事务入库 + msgSecCheck
 
 | 参数 | 首轮 | 重试 |
 |---|---|---|
-| 模型 | 配置项 `DEEPSEEK_MODEL`（默认 `deepseek-chat`） | 同首轮（Q2） |
+| 模型 | 配置项 `DEEPSEEK_MODEL`（默认 `deepseek-flash`） | 同首轮（Q2） |
 | temperature | `0` | `0.3`（Q1：温度 0 下同 prompt 重试会复现同一失败） |
 | `max_tokens` | 2000 | 2000 |
 | `response_format` | `{"type":"json_object"}` | 同 |
@@ -282,7 +282,7 @@ type HomeworkSession struct {
 ## 10. 实施备忘与待验证
 
 - **待验证**（本会话网络受限，接入前须核实）：
-  - `deepseek-chat` / `deepseek-reasoner` 的当前模型名映射与价格（004 §1.1）；
+  - `deepseek-flash` / `deepseek-v4-pro` 的价格（模型名已实测，004 §1.1）；
   - DeepSeek 是否已提供 `json_schema` strict 模式（若有，§3.4 的手工校验可减负，但保留兜底）；
   - `msgSecCheck` 的单次文本长度上限与 QPS 配额（002 已标记待验证），影响 §5.2 的分片阈值；
   - 温度 0.3 的重试是否足以避开复现 —— 上线后用日志里的失败样本回归验证。

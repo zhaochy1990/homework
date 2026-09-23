@@ -117,7 +117,7 @@ POST /media/upload-tickets/{uploadId}/confirm   {sizeBytes, etag, durationSec?, 
 
 | 方法/路径 | 权限 | 说明 |
 |---|---|---|
-| `POST /classes/{classId}/homework/parse` | admin | `{date, rawText, defaultSubject?}` → **同步**调 DeepSeek（30s 超时，不自动重试），返回**按学科分组**的草稿，**不入库**：`{groups: [{subject, target: new\|append, sessionId?, existingTodos?, kind, date, startDate?, endDate?, holidayName?, todos: [{content, estimatedMinutes}], notes}]}`。失败 → 502 `llm_unavailable` / 422 `llm_parse_failed`，前端给"重试"（同模型同 prompt，温度 0.3）与"手动填写"两条路 |
+| `POST /classes/{classId}/homework/parse` | admin | `{date, rawText, defaultSubject?, retry?}` → **同步**调 DeepSeek（30s 超时，不自动重试；`retry=true` 为管理员点"重试"，temperature 提到 0.3、同模型同 prompt），返回**按学科分组**的草稿，**不入库**：`{groups: [{subject, target: new\|append, sessionId?, existingTodos?, kind, date, startDate?, endDate?, holidayName?, todos: [{content, estimatedMinutes}], notes}]}`。失败 → 502 `llm_unavailable` / 422 `llm_parse_failed`，前端给"重试"（同模型同 prompt，温度 0.3）与"手动填写"两条路 |
 | `POST /classes/{classId}/homework` | admin | `{date, rawText, groups: [{subject, todos, notes?}]}`，**单事务**入库：先 `msgSecCheck`（命中 → 422 `content_blocked`），再按上学日历对每个分组判 `kind`（上学日含调休补班 → day；休息日 → 自动定位连续休息段 → holiday，start/end 自动算）；`target=append` 并入已有 Session、`new` 新建。冲突**整单**拒绝并在响应中指明学科：409 `duplicate_session` / `no_homework_day_conflict` |
 | `PATCH /homework/{sessionId}` | admin | `{rawText?, todos: {add: [{content, sortOrder}], update: [{id, content?, sortOrder?}], remove: [id]}}`；todo id 不可变（ADR 0003）；remove 已勾选 todo 级联清勾选（前端二次确认） |
 | `DELETE /homework/{sessionId}` | admin | 有任何打卡 → 409 `session_has_checkins` |

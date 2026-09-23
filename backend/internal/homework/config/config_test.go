@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestParseDotEnvFile(t *testing.T) {
@@ -55,5 +56,41 @@ func TestDSN(t *testing.T) {
 	want := "u:p@tcp(db:3306)/n?charset=utf8mb4&parseTime=True&loc=UTC"
 	if got := d.DSN(); got != want {
 		t.Fatalf("DSN = %q, want %q", got, want)
+	}
+}
+
+func TestDeepSeekDefaultsAndOverride(t *testing.T) {
+	cfg, err := build(nil, func(string) (string, bool) { return "", false })
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := cfg.DeepSeek
+	if d.BaseURL != "https://api.deepseek.com" || d.Model != "deepseek-flash" || d.HardModel != "deepseek-v4-pro" {
+		t.Fatalf("defaults wrong: %+v", d)
+	}
+	if d.Timeout != 30*time.Second || d.APIKey != "" {
+		t.Fatalf("defaults wrong: %+v", d)
+	}
+
+	dot := map[string]string{
+		"DEEPSEEK_API_KEY":    "sk-dot",
+		"DEEPSEEK_MODEL":      "m-dot",
+		"DEEPSEEK_MODEL_HARD": "hard-dot",
+		"DEEPSEEK_TIMEOUT":    "45s",
+	}
+	lookup := func(k string) (string, bool) {
+		if k == "DEEPSEEK_BASE_URL" {
+			return "http://stub", true
+		}
+		return "", false
+	}
+	cfg, err = build(dot, lookup)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d = cfg.DeepSeek
+	if d.BaseURL != "http://stub" || d.APIKey != "sk-dot" || d.Model != "m-dot" ||
+		d.HardModel != "hard-dot" || d.Timeout != 45*time.Second {
+		t.Fatalf("override wrong: %+v", d)
 	}
 }

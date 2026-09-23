@@ -16,6 +16,8 @@ import (
 	"github.com/zhaochy1990/homework/backend/internal/homework/media"
 	"github.com/zhaochy1990/homework/backend/internal/homework/middleware"
 	"github.com/zhaochy1990/homework/backend/internal/homework/model"
+	"github.com/zhaochy1990/homework/backend/internal/homework/parse"
+	"github.com/zhaochy1990/homework/backend/internal/homework/session"
 	"github.com/zhaochy1990/homework/backend/internal/homework/textbook"
 	"github.com/zhaochy1990/homework/backend/internal/homework/user"
 	"github.com/zhaochy1990/homework/backend/internal/homework/wechat"
@@ -34,6 +36,8 @@ type Server struct {
 	media     *media.Service
 	materials *material.Store
 	textbooks *textbook.Store
+	sessions  *session.Store
+	parser    *parse.Client
 }
 
 // Option 覆盖装配时的默认依赖（测试注入用）。
@@ -41,6 +45,9 @@ type Option func(*Server)
 
 // WithMedia 注入媒体服务（测试或自定义适配器）；不传时由 COS 配置构造。
 func WithMedia(svc *media.Service) Option { return func(s *Server) { s.media = svc } }
+
+// WithParser 注入解析客户端（测试注入假 DeepSeek）；不传时由 DEEPSEEK_* 配置构造。
+func WithParser(c *parse.Client) Option { return func(s *Server) { s.parser = c } }
 
 // New 装配全部依赖；公钥/邀请密钥解析失败即返回错误（拒绝启动）。
 func New(cfg *config.Config, db *gorm.DB, opts ...Option) (http.Handler, error) {
@@ -63,6 +70,16 @@ func New(cfg *config.Config, db *gorm.DB, opts ...Option) (http.Handler, error) 
 		wechat:    wechat.NewClient(cfg.WeChat.AppID, cfg.WeChat.AppSecret, cfg.WeChat.APIBase, cfg.WeChat.EnvVersion),
 		materials: material.NewStore(db),
 		textbooks: textbook.NewStore(db),
+		sessions:  session.NewStore(db),
+	}
+	if cfg.DeepSeek.APIKey != "" {
+		s.parser = parse.New(parse.Config{
+			BaseURL:   cfg.DeepSeek.BaseURL,
+			APIKey:    cfg.DeepSeek.APIKey,
+			Model:     cfg.DeepSeek.Model,
+			HardModel: cfg.DeepSeek.HardModel,
+			Timeout:   cfg.DeepSeek.Timeout,
+		})
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -118,6 +135,9 @@ func New(cfg *config.Config, db *gorm.DB, opts ...Option) (http.Handler, error) 
 
 	// 上学日历（T09，api-contract §3.9）。
 	mux.Handle("GET /api/v1/school-calendar", protect(s.getSchoolCalendar))
+
+	// 作业解析（T10，api-contract §3.7）：同步调 LLM，不落库。
+	mux.Handle("POST /api/v1/classes/{classId}/homework/parse", protect(s.parseHomework))
 
 	// 媒体直传（T07，api-contract §3.5）。
 	mux.Handle("POST /api/v1/media/upload-tickets", protect(s.createUploadTicket))
