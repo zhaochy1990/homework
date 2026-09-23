@@ -1,24 +1,43 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
+	"github.com/zhaochy1990/homework/backend/internal/homework/auth"
 	"github.com/zhaochy1990/homework/backend/internal/homework/httpx"
 )
 
-// Auth 是 T01 的路由骨架占位：仅校验 Authorization: Bearer 头存在。
-//
-// TODO(T02): 替换为 RS256 本地验签（白名单 iss、exp 必填、aud 自校验、
-// 公钥拉取缓存 + 本地文件 fallback），并把 sub 写入 request context。真实
-// 实现前该中间件不构成任何身份保证，任何非空 Bearer 都会放行。
-func Auth(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if !ok || strings.TrimSpace(token) == "" {
-			httpx.Write(w, http.StatusUnauthorized, httpx.CodeUnauthorized, "缺少登录凭证")
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
+type claimsKey struct{}
+
+// Claims 取回已验签的 JWT claims（由 Auth 写入）。
+func Claims(ctx context.Context) (*auth.Claims, bool) {
+	c, ok := ctx.Value(claimsKey{}).(*auth.Claims)
+	return c, ok
+}
+
+// VerifyFunc 校验原始 token，失败一律映射为 401 invalid_token。
+type VerifyFunc func(rawToken string) (*auth.Claims, error)
+
+// Auth 校验 Bearer JWT（RS256 本地验签）并把 claims 写入 request context。
+// 缺 Bearer → 401 unauthorized；校验失败 → 401 invalid_token（与 auth-service 一致）。
+func Auth(verify VerifyFunc) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			raw, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+			raw = strings.TrimSpace(raw)
+			if !ok || raw == "" {
+				httpx.Write(w, http.StatusUnauthorized, httpx.CodeUnauthorized, "缺少登录凭证")
+				return
+			}
+			claims, err := verify(raw)
+			if err != nil {
+				httpx.Write(w, http.StatusUnauthorized, httpx.CodeInvalidToken, "登录凭证无效")
+				return
+			}
+			ctx := context.WithValue(r.Context(), claimsKey{}, claims)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }

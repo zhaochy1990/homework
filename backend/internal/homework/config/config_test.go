@@ -25,7 +25,7 @@ func TestParseDotEnvFile(t *testing.T) {
 }
 
 func TestBuildPrecedence(t *testing.T) {
-	dot := map[string]string{"DB_NAME": "from_dot", "DB_USER": "dotuser"}
+	dot := map[string]string{"DB_NAME": "from_dot", "DB_USER": "dotuser", "AUTH_JWT_AUDIENCE": "app_dot"}
 	lookup := func(k string) (string, bool) {
 		if k == "DB_NAME" {
 			return "from_env", true
@@ -44,6 +44,9 @@ func TestBuildPrecedence(t *testing.T) {
 	}
 	if cfg.HTTPAddr != ":8080" || cfg.Env != "dev" {
 		t.Fatalf("defaults missing: %+v", cfg)
+	}
+	if cfg.Auth.Issuer != "auth-service" || cfg.Auth.Audience != "app_dot" {
+		t.Fatalf("auth config wrong: %+v", cfg.Auth)
 	}
 }
 

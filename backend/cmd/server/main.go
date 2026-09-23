@@ -40,9 +40,14 @@ func run() error {
 	}
 	slog.Info("migrated database", "tables", "all")
 
+	handler, err := server.New(cfg, db)
+	if err != nil {
+		return err
+	}
+
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           server.New(cfg, db),
+		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       60 * time.Second,
 		WriteTimeout:      60 * time.Second,

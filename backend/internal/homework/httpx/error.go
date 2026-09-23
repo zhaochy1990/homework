@@ -34,7 +34,7 @@ const (
 	CodeContentBlocked        = "content_blocked"
 	CodeUploadMismatch        = "upload_mismatch"
 	CodeLLMUnavailable        = "llm_unavailable"
-	CodeNotImplemented        = "not_implemented"
+	CodeInternal              = "internal_error"
 )
 
 type body struct {

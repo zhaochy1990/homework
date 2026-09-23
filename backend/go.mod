@@ -3,6 +3,7 @@ module github.com/zhaochy1990/homework/backend
 go 1.22
 
 require (
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.31.2
 )

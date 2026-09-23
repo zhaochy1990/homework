@@ -15,6 +15,7 @@ type Config struct {
 	Env      string
 	HTTPAddr string
 	DB       DB
+	Auth     Auth
 }
 
 type DB struct {
@@ -23,6 +24,14 @@ type DB struct {
 	User     string
 	Password string
 	Name     string
+}
+
+// Auth 是 STRIDE auth-service 的本地验签配置。
+type Auth struct {
+	Issuer        string // JWT iss，固定 auth-service
+	Audience      string // JWT aud，= 本小程序 application 的 client_id
+	PublicKeyURL  string // GET {"publickey": PEM}
+	PublicKeyFile string // URL 不可达时的本地 PEM fallback
 }
 
 // DSN 使用 UTC 连接时区；日期列在应用层以 UTC 零点表示 CST 日历日。
@@ -66,6 +75,12 @@ func build(dot map[string]string, lookup func(string) (string, bool)) (*Config, 
 			User:     get("DB_USER", "homework"),
 			Password: get("DB_PASSWORD", "homework"),
 			Name:     get("DB_NAME", "homework"),
+		},
+		Auth: Auth{
+			Issuer:        get("AUTH_JWT_ISSUER", "auth-service"),
+			Audience:      get("AUTH_JWT_AUDIENCE", ""),
+			PublicKeyURL:  get("AUTH_JWT_PUBLIC_KEY_URL", ""),
+			PublicKeyFile: get("AUTH_JWT_PUBLIC_KEY_FILE", ""),
 		},
 	}, nil
 }

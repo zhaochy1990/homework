@@ -46,6 +46,7 @@ AUTH_CLIENT_SECRET=
 AUTH_JWT_ISSUER=auth-service                 # [固定]
 AUTH_JWT_AUDIENCE=                           # = AUTH_CLIENT_ID
 AUTH_JWT_PUBLIC_KEY_URL=                     # = <AUTH_SERVICE_BASE_URL>/api/system/public-key
+AUTH_JWT_PUBLIC_KEY_FILE=                    # 可选：URL 不可达时的本地 PEM fallback
 ```
 
 ## 1. 腾讯云 COS（私有桶 + 一个子账号）
