@@ -2,19 +2,20 @@
 package server
 
 import (
-	"encoding/json"
-	"io"
 	"net/http"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/zhaochy1990/homework/backend/internal/homework/auth"
+	"github.com/zhaochy1990/homework/backend/internal/homework/class"
 	"github.com/zhaochy1990/homework/backend/internal/homework/config"
 	"github.com/zhaochy1990/homework/backend/internal/homework/family"
 	"github.com/zhaochy1990/homework/backend/internal/homework/httpx"
+	"github.com/zhaochy1990/homework/backend/internal/homework/media"
 	"github.com/zhaochy1990/homework/backend/internal/homework/middleware"
 	"github.com/zhaochy1990/homework/backend/internal/homework/model"
 	"github.com/zhaochy1990/homework/backend/internal/homework/user"
+	"github.com/zhaochy1990/homework/backend/internal/homework/wechat"
 	"gorm.io/gorm"
 )
 
@@ -23,11 +24,20 @@ type Server struct {
 	db      *gorm.DB
 	users   *user.Store
 	family  *family.Store
+	classes *class.Store
 	invites *family.InviteSigner
+	wechat  *wechat.Client
+	media   *media.Service
 }
 
+// Option 覆盖装配时的默认依赖（测试注入用）。
+type Option func(*Server)
+
+// WithMedia 注入媒体服务（测试或自定义适配器）；不传时由 COS 配置构造。
+func WithMedia(svc *media.Service) Option { return func(s *Server) { s.media = svc } }
+
 // New 装配全部依赖；公钥/邀请密钥解析失败即返回错误（拒绝启动）。
-func New(cfg *config.Config, db *gorm.DB) (http.Handler, error) {
+func New(cfg *config.Config, db *gorm.DB, opts ...Option) (http.Handler, error) {
 	verifier, err := auth.LoadVerifier(cfg.Auth)
 	if err != nil {
 		return nil, err
@@ -36,7 +46,25 @@ func New(cfg *config.Config, db *gorm.DB) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	s := &Server{cfg: cfg, db: db, users: user.NewStore(db), family: family.NewStore(db), invites: invites}
+	s := &Server{
+		cfg:     cfg,
+		db:      db,
+		users:   user.NewStore(db),
+		family:  family.NewStore(db),
+		classes: class.NewStore(db),
+		invites: invites,
+		wechat:  wechat.NewClient(cfg.WeChat.AppID, cfg.WeChat.AppSecret, cfg.WeChat.APIBase, cfg.WeChat.EnvVersion),
+	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	if s.media == nil {
+		svc, err := media.NewService(MediaConfig(cfg), db)
+		if err != nil {
+			return nil, err
+		}
+		s.media = svc
+	}
 	authMW := middleware.Auth(verifier.Verify)
 
 	mux := http.NewServeMux()
@@ -55,6 +83,28 @@ func New(cfg *config.Config, db *gorm.DB) (http.Handler, error) {
 	mux.Handle("POST /api/v1/guardianships/accept", protect(s.acceptGuardianship))
 	mux.Handle("DELETE /api/v1/children/{childId}/guardians/{userId}", protect(s.removeGuardian))
 	mux.Handle("DELETE /api/v1/children/{childId}/guardians/me", protect(s.quitGuardianship))
+
+	// 班级与成员（T04，api-contract §3.2）。
+	mux.Handle("POST /api/v1/classes", protect(s.createClass))
+	mux.Handle("GET /api/v1/classes/my", protect(s.listMyClasses))
+	mux.Handle("GET /api/v1/classes/public", protect(s.searchPublicClasses))
+	mux.Handle("GET /api/v1/classes/{classId}", protect(s.getClass))
+	mux.Handle("PATCH /api/v1/classes/{classId}", protect(s.patchClass))
+	mux.Handle("POST /api/v1/join-requests", protect(s.createJoinRequest))
+	mux.Handle("GET /api/v1/classes/{classId}/join-requests", protect(s.listJoinRequests))
+	mux.Handle("POST /api/v1/join-requests/{requestId}/approve", protect(s.approveJoinRequest))
+	mux.Handle("POST /api/v1/join-requests/{requestId}/reject", protect(s.rejectJoinRequest))
+	mux.Handle("GET /api/v1/classes/{classId}/members", protect(s.listMembers))
+	mux.Handle("DELETE /api/v1/classes/{classId}/members/me", protect(s.quitClass))
+	mux.Handle("DELETE /api/v1/classes/{classId}/members/{userId}", protect(s.removeMember))
+	mux.Handle("POST /api/v1/classes/{classId}/members/{userId}/promote", protect(s.promoteMember))
+	mux.Handle("POST /api/v1/classes/{classId}/members/{userId}/demote", protect(s.demoteMember))
+	mux.Handle("DELETE /api/v1/classes/{classId}", protect(s.dissolveClass))
+	mux.Handle("GET /api/v1/classes/{classId}/invite-qrcode", protect(s.inviteQRCode))
+
+	// 媒体直传（T07，api-contract §3.5）。
+	mux.Handle("POST /api/v1/media/upload-tickets", protect(s.createUploadTicket))
+	mux.Handle("POST /api/v1/media/upload-tickets/{uploadId}/confirm", protect(s.confirmUploadTicket))
 
 	return middleware.Logging(mux), nil
 }
@@ -86,8 +136,7 @@ func (s *Server) patchMe(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Nickname string `json:"nickname"`
 	}
-	if err := json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&body); err != nil {
-		httpx.Write(w, http.StatusBadRequest, httpx.CodeBadRequest, "请求体不是合法 JSON")
+	if !decodeJSON(w, r, &body) {
 		return
 	}
 	nickname := strings.TrimSpace(body.Nickname)

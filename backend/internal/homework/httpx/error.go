@@ -34,6 +34,7 @@ const (
 	CodeContentBlocked        = "content_blocked"
 	CodeUploadMismatch        = "upload_mismatch"
 	CodeLLMUnavailable        = "llm_unavailable"
+	CodeWechatUnavailable     = "wechat_unavailable"
 	CodeInternal              = "internal_error"
 )
 

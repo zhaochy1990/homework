@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -34,8 +35,7 @@ func (s *Server) createChild(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Name string `json:"name"`
 	}
-	if err := json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&body); err != nil {
-		httpx.Write(w, http.StatusBadRequest, httpx.CodeBadRequest, "请求体不是合法 JSON")
+	if !decodeJSON(w, r, &body) {
 		return
 	}
 	name, ok := validName(w, body.Name)
@@ -83,8 +83,7 @@ func (s *Server) patchChild(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Name *string `json:"name"`
 	}
-	if err := json.NewDecoder(io.LimitReader(r.Body, 4096)).Decode(&body); err != nil {
-		httpx.Write(w, http.StatusBadRequest, httpx.CodeBadRequest, "请求体不是合法 JSON")
+	if !decodeJSON(w, r, &body) {
 		return
 	}
 	if body.Name != nil {
@@ -134,8 +133,7 @@ func (s *Server) acceptGuardianship(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		InviteToken string `json:"inviteToken"`
 	}
-	if err := json.NewDecoder(io.LimitReader(r.Body, 8192)).Decode(&body); err != nil {
-		httpx.Write(w, http.StatusBadRequest, httpx.CodeBadRequest, "请求体不是合法 JSON")
+	if !decodeJSON(w, r, &body) {
 		return
 	}
 	invite, err := s.invites.Verify(strings.TrimSpace(body.InviteToken))
@@ -241,10 +239,25 @@ func pathID(w http.ResponseWriter, r *http.Request, name string) (uint64, bool) 
 }
 
 func validName(w http.ResponseWriter, raw string) (string, bool) {
-	name := strings.TrimSpace(raw)
-	if name == "" || utf8.RuneCountInString(name) > 64 {
-		httpx.Write(w, http.StatusBadRequest, httpx.CodeBadRequest, "姓名必填且不超过 64 字")
+	return requiredText(w, raw, "姓名", 64)
+}
+
+// requiredText 校验必填文本（trim 后非空且不超过 max 字），失败时写 400。
+func requiredText(w http.ResponseWriter, raw, label string, max int) (string, bool) {
+	text := strings.TrimSpace(raw)
+	if text == "" || utf8.RuneCountInString(text) > max {
+		httpx.Write(w, http.StatusBadRequest, httpx.CodeBadRequest,
+			fmt.Sprintf("%s必填且不超过 %d 字", label, max))
 		return "", false
 	}
-	return name, true
+	return text, true
+}
+
+// decodeJSON 解析请求体 JSON，失败时写 400。
+func decodeJSON(w http.ResponseWriter, r *http.Request, v any) bool {
+	if err := json.NewDecoder(io.LimitReader(r.Body, 64<<10)).Decode(v); err != nil {
+		httpx.Write(w, http.StatusBadRequest, httpx.CodeBadRequest, "请求体不是合法 JSON")
+		return false
+	}
+	return true
 }

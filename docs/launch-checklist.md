@@ -31,6 +31,8 @@ TENCENTCLOUD_SECRET_KEY=
 # 微信小程序
 WECHAT_APPID=wx5bdb4b2269d80ce7      # [固定] 见 project.config.json
 WECHAT_APPSECRET=
+WECHAT_API_BASE=https://api.weixin.qq.com   # [固定]
+WECHAT_QR_ENV_VERSION=release                # release | trial | develop
 API_DOMAIN=               # 后端备案域名，例 https://homework.example.com
 WX_MSGPUSH_TOKEN=
 WX_MSGPUSH_AESKEY=

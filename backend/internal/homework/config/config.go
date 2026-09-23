@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type Config struct {
@@ -16,6 +17,8 @@ type Config struct {
 	HTTPAddr          string
 	DB                DB
 	Auth              Auth
+	WeChat            WeChat
+	COS               COS
 	InviteTokenSecret string // 监护人邀请 token 的 HMAC 密钥
 }
 
@@ -33,6 +36,26 @@ type Auth struct {
 	Audience      string // JWT aud，= 本小程序 application 的 client_id
 	PublicKeyURL  string // GET {"publickey": PEM}
 	PublicKeyFile string // URL 不可达时的本地 PEM fallback
+}
+
+// WeChat 是小程序服务端调用的配置（access_token、小程序码等）。
+type WeChat struct {
+	AppID      string
+	AppSecret  string
+	APIBase    string // 默认 https://api.weixin.qq.com
+	EnvVersion string // 小程序码环境：release | trial | develop
+}
+
+// COS 是媒体直传与播放签发配置（T07，research/003）。
+type COS struct {
+	Bucket      string
+	Region      string
+	AppID       string
+	Domain      string // 可选自定义播放域名，仅作展示
+	SecretID    string // 永久密钥，仅服务端持有
+	SecretKey   string
+	STSTTL      time.Duration // 临时密钥/上传会话有效期，默认 45m
+	PlaybackTTL time.Duration // 预签名播放 URL 有效期，默认 2h
 }
 
 // DSN 使用 UTC 连接时区；日期列在应用层以 UTC 零点表示 CST 日历日。
@@ -67,6 +90,12 @@ func build(dot map[string]string, lookup func(string) (string, bool)) (*Config, 
 		}
 		return def
 	}
+	getDur := func(key string, def time.Duration) time.Duration {
+		if d, err := time.ParseDuration(get(key, "")); err == nil && d > 0 {
+			return d
+		}
+		return def
+	}
 	return &Config{
 		Env:      get("ENV", "dev"),
 		HTTPAddr: get("HTTP_ADDR", ":8080"),
@@ -84,6 +113,22 @@ func build(dot map[string]string, lookup func(string) (string, bool)) (*Config, 
 			PublicKeyFile: get("AUTH_JWT_PUBLIC_KEY_FILE", ""),
 		},
 		InviteTokenSecret: get("INVITE_TOKEN_SECRET", ""),
+		WeChat: WeChat{
+			AppID:      get("WECHAT_APPID", ""),
+			AppSecret:  get("WECHAT_APPSECRET", ""),
+			APIBase:    get("WECHAT_API_BASE", "https://api.weixin.qq.com"),
+			EnvVersion: get("WECHAT_QR_ENV_VERSION", "release"),
+		},
+		COS: COS{
+			Bucket:      get("COS_BUCKET", ""),
+			Region:      get("COS_REGION", ""),
+			AppID:       get("COS_APPID", ""),
+			Domain:      get("COS_DOMAIN", ""),
+			SecretID:    get("TENCENTCLOUD_SECRET_ID", ""),
+			SecretKey:   get("TENCENTCLOUD_SECRET_KEY", ""),
+			STSTTL:      getDur("COS_STS_TTL", 45*time.Minute),
+			PlaybackTTL: getDur("COS_PLAYBACK_TTL", 2*time.Hour),
+		},
 	}, nil
 }
 

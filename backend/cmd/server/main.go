@@ -13,6 +13,7 @@ import (
 
 	"github.com/zhaochy1990/homework/backend/internal/homework/config"
 	"github.com/zhaochy1990/homework/backend/internal/homework/database"
+	"github.com/zhaochy1990/homework/backend/internal/homework/media"
 	"github.com/zhaochy1990/homework/backend/internal/homework/server"
 )
 
@@ -40,7 +41,11 @@ func run() error {
 	}
 	slog.Info("migrated database", "tables", "all")
 
-	handler, err := server.New(cfg, db)
+	mediaSvc, err := media.NewService(server.MediaConfig(cfg), db)
+	if err != nil {
+		return err
+	}
+	handler, err := server.New(cfg, db, server.WithMedia(mediaSvc))
 	if err != nil {
 		return err
 	}
@@ -56,6 +61,10 @@ func run() error {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	if mediaSvc != nil {
+		go mediaSvc.RunCleanup(ctx, 24*time.Hour)
+	}
 
 	errCh := make(chan error, 1)
 	go func() {

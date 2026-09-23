@@ -123,6 +123,24 @@ type Material struct {
     UploadedBy uint64
     CreatedAt  time.Time
 }
+
+// 直传授权（T07，research/003）：签发 STS 临时密钥时落一条 pending，confirm 后置 confirmed，
+// 超时未确认的由每日孤儿清理任务删除 COS 对象并置 cleaned。
+type UploadTicket struct {
+    ID          uint64 `gorm:"primaryKey"`
+    UploadID    string `gorm:"uniqueIndex;size:32"` // 对外暴露的随机标识
+    UserID      uint64 `gorm:"index"`
+    Kind        string `gorm:"size:20"` // material_image|material_video|checkin_media|thumb|avatar
+    ObjectKey   string `gorm:"uniqueIndex;size:512"` // uploads/{uid}/{kind}/{uploadId}.{ext}
+    ContentType string `gorm:"size:128"`
+    SizeBytes   int64
+    Bucket      string `gorm:"size:128"`
+    Region      string `gorm:"size:64"`
+    Status      string `gorm:"size:10;default:pending"` // pending | confirmed | cleaned
+    CreatedAt   time.Time
+    ExpiresAt   time.Time
+    ConfirmedAt *time.Time
+}
 ```
 
 ### 作业

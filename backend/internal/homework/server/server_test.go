@@ -43,6 +43,7 @@ func newHandler(t *testing.T, db *gorm.DB, base *config.Config) (http.Handler, [
 	}
 	if base != nil {
 		cfg.DB = base.DB
+		cfg.WeChat = base.WeChat
 	}
 	h, err := server.New(cfg, db)
 	if err != nil {

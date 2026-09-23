@@ -14,6 +14,7 @@ func TestTableNames(t *testing.T) {
 		Textbook{}.TableName():         "textbooks",
 		TextbookUnit{}.TableName():     "textbook_units",
 		ClassTextbook{}.TableName():    "class_textbooks",
+		UploadTicket{}.TableName():     "upload_tickets",
 		Material{}.TableName():         "materials",
 		HomeworkSession{}.TableName():  "homework_sessions",
 		Todo{}.TableName():             "todos",
@@ -41,8 +42,8 @@ func TestAllCoversEveryTable(t *testing.T) {
 		}
 		seen[name] = true
 	}
-	if len(seen) != 20 {
-		t.Fatalf("All() has %d tables, want 20", len(seen))
+	if len(seen) != 21 {
+		t.Fatalf("All() has %d tables, want 21", len(seen))
 	}
 }
 

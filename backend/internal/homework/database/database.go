@@ -17,7 +17,8 @@ func Open(cfg config.DB, dev bool) (*gorm.DB, error) {
 		lvl = logger.Warn
 	}
 	return gorm.Open(mysql.Open(cfg.DSN()), &gorm.Config{
-		Logger: logger.Default.LogMode(lvl),
+		Logger:         logger.Default.LogMode(lvl),
+		TranslateError: true,
 	})
 }
 

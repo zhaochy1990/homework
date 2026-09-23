@@ -6,7 +6,11 @@
 //   - subject 取值由代码内全局封闭枚举约束（ADR 0007），不在此包校验。
 package model
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 // ---------- 身份与家庭 ----------
 
@@ -48,6 +52,7 @@ type Class struct {
 	InviteCode   string `gorm:"uniqueIndex;size:16"`
 	CreatedBy    uint64
 	CreatedAt    time.Time
+	DeletedAt    gorm.DeletedAt `gorm:"index"` // 解散为软删（api-contract §3.2）
 }
 
 func (Class) TableName() string { return "classes" }
@@ -114,6 +119,26 @@ type ClassTextbook struct {
 }
 
 func (ClassTextbook) TableName() string { return "class_textbooks" }
+
+// UploadTicket 记录一次直传授权（T07）：签发 STS 临时密钥后待 confirm，
+// 超时未确认的由每日孤儿清理任务删除对象并置 cleaned。upload_id 是对外暴露的随机标识。
+type UploadTicket struct {
+	ID          uint64 `gorm:"primaryKey"`
+	UploadID    string `gorm:"uniqueIndex;size:32"`
+	UserID      uint64 `gorm:"index"`
+	Kind        string `gorm:"size:20"`
+	ObjectKey   string `gorm:"uniqueIndex;size:512"`
+	ContentType string `gorm:"size:128"`
+	SizeBytes   int64
+	Bucket      string `gorm:"size:128"`
+	Region      string `gorm:"size:64"`
+	Status      string `gorm:"size:10;default:pending"` // pending | confirmed | cleaned
+	CreatedAt   time.Time
+	ExpiresAt   time.Time
+	ConfirmedAt *time.Time
+}
+
+func (UploadTicket) TableName() string { return "upload_tickets" }
 
 type Material struct {
 	ID         uint64 `gorm:"primaryKey"`
@@ -245,7 +270,7 @@ func All() []any {
 	return []any{
 		&User{}, &Child{}, &Guardianship{},
 		&Class{}, &ClassJoinRequest{}, &ClassMember{}, &ChildEnrollment{},
-		&Textbook{}, &TextbookUnit{}, &ClassTextbook{}, &Material{},
+		&Textbook{}, &TextbookUnit{}, &ClassTextbook{}, &UploadTicket{}, &Material{},
 		&HomeworkSession{}, &Todo{}, &TodoTick{},
 		&Checkin{}, &CheckinMedia{}, &CheckinCard{},
 		&SchoolCalendar{}, &NoHomeworkDay{},
