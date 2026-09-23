@@ -12,10 +12,11 @@ import (
 )
 
 type Config struct {
-	Env      string
-	HTTPAddr string
-	DB       DB
-	Auth     Auth
+	Env               string
+	HTTPAddr          string
+	DB                DB
+	Auth              Auth
+	InviteTokenSecret string // 监护人邀请 token 的 HMAC 密钥
 }
 
 type DB struct {
@@ -82,6 +83,7 @@ func build(dot map[string]string, lookup func(string) (string, bool)) (*Config, 
 			PublicKeyURL:  get("AUTH_JWT_PUBLIC_KEY_URL", ""),
 			PublicKeyFile: get("AUTH_JWT_PUBLIC_KEY_FILE", ""),
 		},
+		InviteTokenSecret: get("INVITE_TOKEN_SECRET", ""),
 	}, nil
 }
 

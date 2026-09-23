@@ -10,6 +10,7 @@
 # 后端服务
 ENV=dev
 HTTP_ADDR=:8080
+INVITE_TOKEN_SECRET=                        # 监护人邀请 token 的 HMAC 密钥，随机长串
 
 # MySQL（本地开发 docker compose up -d mysql；生产填实际库）
 DB_HOST=127.0.0.1

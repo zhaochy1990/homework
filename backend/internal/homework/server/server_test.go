@@ -37,8 +37,9 @@ func newHandler(t *testing.T, db *gorm.DB, base *config.Config) (http.Handler, [
 		t.Fatal(err)
 	}
 	cfg := &config.Config{
-		Env:  "test",
-		Auth: config.Auth{Issuer: testIssuer, Audience: testAudience, PublicKeyFile: path},
+		Env:               "test",
+		InviteTokenSecret: "test-invite-secret",
+		Auth:              config.Auth{Issuer: testIssuer, Audience: testAudience, PublicKeyFile: path},
 	}
 	if base != nil {
 		cfg.DB = base.DB
@@ -135,20 +136,7 @@ func TestMeRejectsBadAuth(t *testing.T) {
 
 // TestMeFlow 是 T02 验收的全链路：工具签的 token 建用户、读用户、改昵称。
 func TestMeFlow(t *testing.T) {
-	if os.Getenv("TEST_MYSQL") == "" {
-		t.Skip("set TEST_MYSQL=1 (and DB_*) to run against a real MySQL")
-	}
-	base, err := config.Load()
-	if err != nil {
-		t.Fatal(err)
-	}
-	db, err := database.Open(base.DB, true)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := database.Migrate(db); err != nil {
-		t.Fatal(err)
-	}
+	db, base := integrationDB(t)
 	h, priv := newHandler(t, db, base)
 
 	sub := fmt.Sprintf("me-test-%d", time.Now().UnixNano())
@@ -204,4 +192,132 @@ func TestPatchMeValidatesNickname(t *testing.T) {
 	if got := errorCode(t, rec); got != "bad_request" {
 		t.Fatalf("error = %q, want bad_request", got)
 	}
+}
+
+func integrationDB(t *testing.T) (*gorm.DB, *config.Config) {
+	t.Helper()
+	if os.Getenv("TEST_MYSQL") == "" {
+		t.Skip("set TEST_MYSQL=1 (and DB_*) to run against a real MySQL")
+	}
+	base, err := config.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	db, err := database.Open(base.DB, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := database.Migrate(db); err != nil {
+		t.Fatal(err)
+	}
+	return db, base
+}
+
+// TestGuardianFlow 是 T03 验收：两账号邀请-接受闭环 + 最后一个监护人不可移除。
+func TestGuardianFlow(t *testing.T) {
+	db, base := integrationDB(t)
+	h, priv := newHandler(t, db, base)
+
+	suffix := time.Now().UnixNano()
+	subA := fmt.Sprintf("t03-a-%d", suffix)
+	subB := fmt.Sprintf("t03-b-%d", suffix)
+	t.Cleanup(func() { db.Where("stride_user_id IN ?", []string{subA, subB}).Delete(&model.User{}) })
+	tokA := tokenFor(t, priv, func(c *auth.Claims) { c.Subject = subA })
+	tokB := tokenFor(t, priv, func(c *auth.Claims) { c.Subject = subB })
+
+	// A 建孩子，自动成为监护人。
+	rec := do(h, http.MethodPost, "/api/v1/children", tokA, strings.NewReader(`{"name":"小明"}`))
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("POST /children = %d, body=%s", rec.Code, rec.Body)
+	}
+	var child struct {
+		ID   uint64 `json:"id"`
+		Name string `json:"name"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &child); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		db.Where("child_id = ?", child.ID).Delete(&model.Guardianship{})
+		db.Delete(&model.Child{}, child.ID)
+	})
+
+	// B 还看不到。
+	if n := listCount(t, h, tokB); n != 0 {
+		t.Fatalf("B should see no children, got %d", n)
+	}
+
+	// A 签发邀请，B 接受。
+	rec = do(h, http.MethodPost, fmt.Sprintf("/api/v1/children/%d/guardian-invites", child.ID), tokA, nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("invite = %d, body=%s", rec.Code, rec.Body)
+	}
+	var invite struct {
+		InviteToken string    `json:"inviteToken"`
+		ExpiresAt   time.Time `json:"expiresAt"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &invite); err != nil {
+		t.Fatal(err)
+	}
+	if invite.InviteToken == "" || !invite.ExpiresAt.After(time.Now()) {
+		t.Fatalf("bad invite: %+v", invite)
+	}
+
+	rec = do(h, http.MethodPost, "/api/v1/guardianships/accept", tokB,
+		strings.NewReader(fmt.Sprintf(`{"inviteToken":%q}`, invite.InviteToken)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("accept = %d, body=%s", rec.Code, rec.Body)
+	}
+	if n := listCount(t, h, tokB); n != 1 {
+		t.Fatalf("B should see the child after accept, got %d", n)
+	}
+
+	// A 移除 B（需要 B 的本地 user id）。
+	meB := getMeID(t, h, tokB)
+	rec = do(h, http.MethodDelete, fmt.Sprintf("/api/v1/children/%d/guardians/%d", child.ID, meB), tokA, nil)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("remove guardian = %d, body=%s", rec.Code, rec.Body)
+	}
+	if n := listCount(t, h, tokB); n != 0 {
+		t.Fatalf("B should lose access, got %d children", n)
+	}
+
+	// B 已非监护人：改孩子应 404。
+	rec = do(h, http.MethodPatch, fmt.Sprintf("/api/v1/children/%d", child.ID), tokB, strings.NewReader(`{"name":"x"}`))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("non-guardian PATCH = %d, want 404", rec.Code)
+	}
+
+	// A 是最后一个监护人：退出 → 409 last_guardian。
+	rec = do(h, http.MethodDelete, fmt.Sprintf("/api/v1/children/%d/guardians/me", child.ID), tokA, nil)
+	if rec.Code != http.StatusConflict || errorCode(t, rec) != "last_guardian" {
+		t.Fatalf("last guardian quit = %d %s", rec.Code, rec.Body)
+	}
+}
+
+func listCount(t *testing.T, h http.Handler, token string) int {
+	t.Helper()
+	rec := do(h, http.MethodGet, "/api/v1/children", token, nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /children = %d, body=%s", rec.Code, rec.Body)
+	}
+	var body struct {
+		Items []struct{} `json:"items"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	return len(body.Items)
+}
+
+func getMeID(t *testing.T, h http.Handler, token string) uint64 {
+	t.Helper()
+	rec := do(h, http.MethodGet, "/api/v1/me", token, nil)
+	var me struct {
+		ID uint64 `json:"id"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &me); err != nil {
+		t.Fatal(err)
+	}
+	return me.ID
 }
