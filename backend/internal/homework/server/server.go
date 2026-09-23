@@ -12,6 +12,7 @@ import (
 	"github.com/zhaochy1990/homework/backend/internal/homework/config"
 	"github.com/zhaochy1990/homework/backend/internal/homework/family"
 	"github.com/zhaochy1990/homework/backend/internal/homework/httpx"
+	"github.com/zhaochy1990/homework/backend/internal/homework/material"
 	"github.com/zhaochy1990/homework/backend/internal/homework/media"
 	"github.com/zhaochy1990/homework/backend/internal/homework/middleware"
 	"github.com/zhaochy1990/homework/backend/internal/homework/model"
@@ -31,6 +32,7 @@ type Server struct {
 	invites   *family.InviteSigner
 	wechat    *wechat.Client
 	media     *media.Service
+	materials *material.Store
 	textbooks *textbook.Store
 }
 
@@ -59,6 +61,7 @@ func New(cfg *config.Config, db *gorm.DB, opts ...Option) (http.Handler, error) 
 		calendar:  cal.NewStore(db),
 		invites:   invites,
 		wechat:    wechat.NewClient(cfg.WeChat.AppID, cfg.WeChat.AppSecret, cfg.WeChat.APIBase, cfg.WeChat.EnvVersion),
+		materials: material.NewStore(db),
 		textbooks: textbook.NewStore(db),
 	}
 	for _, opt := range opts {
@@ -126,6 +129,16 @@ func New(cfg *config.Config, db *gorm.DB, opts ...Option) (http.Handler, error) 
 	mux.Handle("POST /api/v1/textbooks/{textbookId}/units", protect(s.addTextbookUnits))
 	mux.Handle("PUT /api/v1/classes/{classId}/textbooks", protect(s.setClassTextbook))
 	mux.Handle("GET /api/v1/classes/{classId}/textbooks", protect(s.listClassTextbooks))
+
+	// 学习资料与内容安全（T08，api-contract §3.6）。
+	mux.Handle("POST /api/v1/classes/{classId}/materials", protect(s.createMaterial))
+	mux.Handle("GET /api/v1/classes/{classId}/materials", protect(s.listMaterials))
+	mux.Handle("GET /api/v1/materials/{materialId}", protect(s.getMaterial))
+	mux.Handle("DELETE /api/v1/materials/{materialId}", protect(s.deleteMaterial))
+
+	// 微信消息推送回调（T08）：不能走 JWT，凭签名验签。
+	mux.HandleFunc("GET /api/v1/wx/callback", s.wxCallback)
+	mux.HandleFunc("POST /api/v1/wx/callback", s.wxCallback)
 
 	return middleware.Logging(mux), nil
 }

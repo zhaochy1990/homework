@@ -211,6 +211,31 @@ func (s *Service) Confirm(ctx context.Context, userID uint64, uploadID string, s
 	return &Confirmed{ObjectKey: rec.ObjectKey, PlaybackURL: playback, ContentType: rec.ContentType, SizeBytes: size}, nil
 }
 
+// Resolve 返回用户已 confirm 的上传凭证，供业务资源引用其对象键与元信息。
+func (s *Service) Resolve(ctx context.Context, userID uint64, uploadID string) (*model.UploadTicket, error) {
+	rec, err := s.store.Get(ctx, uploadID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrTicketNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	if rec.UserID != userID || rec.Status != "confirmed" {
+		return nil, ErrTicketNotFound
+	}
+	return rec, nil
+}
+
+// PlaybackURL 为对象键签发临时查看/播放 URL（TTL = PlaybackTTL，默认 2h）。
+func (s *Service) PlaybackURL(ctx context.Context, objectKey string) (string, error) {
+	return s.objects.PresignGet(ctx, objectKey, s.cfg.PlaybackTTL)
+}
+
+// DeleteObject 删除 COS 对象（业务资源删除时调用）。
+func (s *Service) DeleteObject(ctx context.Context, objectKey string) error {
+	return s.objects.Delete(ctx, objectKey)
+}
+
 // CleanupOrphans 删除超时未 confirm 的 pending 对象并置 cleaned，返回清理条数。
 //
 // ponytail: 与 Confirm 共享对象时靠 ExpiresAt 先决条件裁剪窗口，极小概率下仍可能在 Head 后

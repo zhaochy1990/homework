@@ -40,10 +40,11 @@ type Auth struct {
 
 // WeChat 是小程序服务端调用的配置（access_token、小程序码等）。
 type WeChat struct {
-	AppID      string
-	AppSecret  string
-	APIBase    string // 默认 https://api.weixin.qq.com
-	EnvVersion string // 小程序码环境：release | trial | develop
+	AppID        string
+	AppSecret    string
+	APIBase      string // 默认 https://api.weixin.qq.com
+	EnvVersion   string // 小程序码环境：release | trial | develop
+	MsgPushToken string // 消息推送验签 token（明文 JSON 模式，launch-checklist §2）
 }
 
 // COS 是媒体直传与播放签发配置（T07，research/003）。
@@ -114,10 +115,11 @@ func build(dot map[string]string, lookup func(string) (string, bool)) (*Config, 
 		},
 		InviteTokenSecret: get("INVITE_TOKEN_SECRET", ""),
 		WeChat: WeChat{
-			AppID:      get("WECHAT_APPID", ""),
-			AppSecret:  get("WECHAT_APPSECRET", ""),
-			APIBase:    get("WECHAT_API_BASE", "https://api.weixin.qq.com"),
-			EnvVersion: get("WECHAT_QR_ENV_VERSION", "release"),
+			AppID:        get("WECHAT_APPID", ""),
+			AppSecret:    get("WECHAT_APPSECRET", ""),
+			APIBase:      get("WECHAT_API_BASE", "https://api.weixin.qq.com"),
+			EnvVersion:   get("WECHAT_QR_ENV_VERSION", "release"),
+			MsgPushToken: get("WX_MSGPUSH_TOKEN", ""),
 		},
 		COS: COS{
 			Bucket:      get("COS_BUCKET", ""),

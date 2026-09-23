@@ -26,7 +26,7 @@ const (
 )
 
 // newHandler 生成密钥对、写公钥文件并装配 handler，返回私钥供测试签 token。
-func newHandler(t *testing.T, db *gorm.DB, base *config.Config) (http.Handler, []byte) {
+func newHandler(t *testing.T, db *gorm.DB, base *config.Config, opts ...server.Option) (http.Handler, []byte) {
 	t.Helper()
 	priv, pub, err := auth.GenerateDevKeyPair()
 	if err != nil {
@@ -45,7 +45,7 @@ func newHandler(t *testing.T, db *gorm.DB, base *config.Config) (http.Handler, [
 		cfg.DB = base.DB
 		cfg.WeChat = base.WeChat
 	}
-	h, err := server.New(cfg, db)
+	h, err := server.New(cfg, db, opts...)
 	if err != nil {
 		t.Fatal(err)
 	}

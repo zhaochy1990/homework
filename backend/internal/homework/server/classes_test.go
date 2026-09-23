@@ -40,6 +40,7 @@ func newEnv(t *testing.T, mutate ...func(*config.Config)) *env {
 
 func (e *env) cleanup() {
 	if len(e.classIDs) > 0 {
+		e.db.Where("class_id IN ?", e.classIDs).Delete(&model.Material{})
 		e.db.Where("class_id IN ?", e.classIDs).Delete(&model.ClassMember{})
 		e.db.Where("class_id IN ?", e.classIDs).Delete(&model.ClassJoinRequest{})
 		e.db.Where("class_id IN ?", e.classIDs).Delete(&model.ChildEnrollment{})

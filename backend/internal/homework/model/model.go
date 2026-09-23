@@ -150,6 +150,7 @@ type Material struct {
 	CosKey     string `gorm:"size:512"`
 	SizeBytes  int64
 	SecStatus  string `gorm:"size:10;default:pending"` // pending | pass | blocked
+	SecTraceID string `gorm:"index;size:64"`           // mediaCheckAsync 回调幂等键（research/002 §3.3）
 	UploadedBy uint64
 	CreatedAt  time.Time
 }
