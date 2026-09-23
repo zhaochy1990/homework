@@ -78,10 +78,10 @@ aside.panel{width:330px;flex:none;position:sticky;top:24px}
 }
 .screen{
   width:100%; height:100%; border-radius:36px; overflow:hidden; position:relative;
-  background:#F6F6F6; color:#111;
+  background:#FFFFFF; color:#111;
   font-family:"Noto Sans SC","PingFang SC",sans-serif;
   --pa:#07C160; --pa-ink:#fff; --warn:#FA5151;
-  --pline:#E8E8E8; --pfill:#F6F6F6; --pcard:#FFFFFF; --psub:#8A8A8A; --pink2:#333;
+  --pline:#ECECEC; --pfill:#F2F3F5; --pcard:#FFFFFF; --psub:#8A8A8A; --pink2:#333;
 }
 .scr{height:100%;display:flex;flex-direction:column}
 .statusbar{
@@ -122,8 +122,8 @@ aside.panel{width:330px;flex:none;position:sticky;top:24px}
 .tabbar .tb svg{width:22px;height:22px}
 .tabbar .tb.on{color:var(--pa)}
 
-/* 通用元件 */
-.card{background:var(--pcard);border:1px solid var(--pline);border-radius:10px;padding:12px;margin:10px 12px}
+/* 通用元件 —— 扁平化：通栏、无边框无圆角，发丝线分隔 */
+.card{background:var(--pcard);border:none;border-bottom:1px solid var(--pline);border-radius:0;padding:13px 16px;margin:0}
 .card h3{font-size:15px;font-weight:600}
 .rowline{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .sub{color:var(--psub);font-size:12.5px}
@@ -134,12 +134,12 @@ aside.panel{width:330px;flex:none;position:sticky;top:24px}
 .chip.on{background:var(--pa);border-color:var(--pa);color:var(--pa-ink);font-weight:500}
 .chip.warn{border-color:var(--warn);color:var(--warn)}
 .btn{
-  display:block;width:100%;padding:11px;border-radius:10px;border:none;
+  display:block;width:100%;padding:11px;border-radius:0;border:none;
   background:var(--pa);color:var(--pa-ink);font-size:15px;font-weight:500;
 }
-.btn.ghost{background:var(--pfill);color:#333;border:1px solid var(--pline)}
+.btn.ghost{background:var(--pfill);color:#333;border:none}
 .btn.dis{opacity:.4;pointer-events:none}
-.hr{height:1px;background:var(--pline);margin:10px -12px}
+.hr{height:1px;background:var(--pline);margin:10px -16px}
 .avatar{
   width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;
   justify-content:center;color:#fff;font-size:14px;font-weight:500;
@@ -164,12 +164,12 @@ aside.panel{width:330px;flex:none;position:sticky;top:24px}
 .badge.new{background:#E8F8EF;color:var(--pa);border:1px solid #BEEBD3}
 .badge.append{background:#FFF4E3;color:#C87D0D;border:1px solid #F5DDAE}
 .dashbox{
-  border:1.5px dashed #C9C9C9;border-radius:10px;padding:16px;text-align:center;
-  color:var(--psub);font-size:13px;background:var(--pcard);margin:10px 12px;
+  border:none;border-bottom:1px solid var(--pline);border-radius:0;padding:15px 16px;
+  text-align:center;color:var(--psub);font-size:13px;background:var(--pcard);margin:0;
 }
 .note{
-  margin:8px 12px;padding:9px 12px;border-radius:8px;background:#FDF6E9;
-  border:1px solid #F0E3C4;font-size:12.5px;color:#8A6D1E;
+  margin:0;padding:10px 16px;border-radius:0;background:#FDF6E9;
+  border:none;border-bottom:1px solid #F0E3C4;font-size:12.5px;color:#8A6D1E;
 }
 .mockimg{
   background:repeating-linear-gradient(45deg,#EFEFEF 0 10px,#E7E7E7 10px 20px);
@@ -239,6 +239,11 @@ aside.panel{width:330px;flex:none;position:sticky;top:24px}
 .cal .d.rest{background:var(--pcard);color:#C3C3C3;border:1px solid var(--pline)}
 .cal .d.nhw{background:#FFF4E3;color:#C87D0D}
 .cal .d.today{outline:2px solid var(--pa);outline-offset:-2px}
+.calarrow{
+  display:block;margin:8px auto 0;border:none;background:none;color:#B9B9B9;
+  font-size:13px;padding:2px 14px;transition:transform .25s;line-height:1;
+}
+.calarrow.open{transform:rotate(180deg)}
 .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;font-size:11px;color:var(--psub)}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:3px;vertical-align:-1px}
 
@@ -422,6 +427,7 @@ const state = {
   openClass:'c1',
   libClass:'c1',      // A 资料库的班级选择
   calSubject:'语文',
+  calOpen:false,
 };
 let parseTimer = null;
 
@@ -495,7 +501,7 @@ function head(title, opt){
   return `<div class="pagehead">${left}<span>${title}</span>${right}</div>`;
 }
 function childChips(){
-  let h='<div style="display:flex;gap:8px;margin:10px 12px 0">';
+  let h='<div style="display:flex;gap:8px;margin:10px 16px 0">';
   D.children.forEach(c=>{
     h+=`<button class="chip ${state.child===c.id?'on':''}" onclick="switchChild('${c.id}')">${c.name} · ${c.grade}</button>`;
   });
@@ -503,7 +509,7 @@ function childChips(){
 }
 function subjChips(cur, fn, list){
   const subs = list || D.classes.map(c=>c.subjects).flat().filter((s,i,a)=>a.indexOf(s)===i);
-  let h='<div style="display:flex;gap:6px;margin:10px 12px 0;flex-wrap:wrap">';
+  let h='<div style="display:flex;gap:6px;margin:10px 16px 0;flex-wrap:wrap">';
   subs.forEach(s=>{ h+=`<button class="chip ${cur===s?'on':''}" onclick="${fn}('${s}')">${s}</button>`; });
   return h+'</div>';
 }
@@ -580,8 +586,8 @@ PAGES.today = function(){
   return head('今日作业') + `
   <div class="body">
     ${childChips()}
-    <div style="padding:10px 12px 0"><span class="sub">${D.date} · 今日 ${D.sessions[c.id].length} 科有作业 · 已打卡 ${cin} 科</span></div>
-    <div style="padding:8px 12px 0;display:flex;gap:6px;flex-wrap:wrap">${streaks}</div>
+    <div style="padding:10px 16px 0"><span class="sub">${D.date} · 今日 ${D.sessions[c.id].length} 科有作业 · 已打卡 ${cin} 科</span></div>
+    <div style="padding:8px 16px 0;display:flex;gap:6px;flex-wrap:wrap">${streaks}</div>
     ${sessionCards('full')}
     <div class="dashbox" onclick="toast('演示边界：无作业日标记在班级页')">今天没有其他作业了 · 标记无作业日 ›</div>
     <div style="height:12px"></div>
@@ -595,7 +601,7 @@ PAGES.todayB = function(){
   return head('今日') + `
   <div class="body">
     ${childChips()}
-    <div style="padding:10px 12px 0"><span class="sub">${D.date} · 今日 ${D.sessions[c.id].length} 科有作业 · 已打卡 ${cin} 科</span></div>
+    <div style="padding:10px 16px 0"><span class="sub">${D.date} · 今日 ${D.sessions[c.id].length} 科有作业 · 已打卡 ${cin} 科</span></div>
     ${sessionCards('compact')}
     <div style="height:12px"></div>
   </div>` + tabbar(0);
@@ -607,7 +613,7 @@ PAGES.todayC = function(){
   return head('今日', {calIcon:true}) + `
   <div class="body">
     ${childChips()}
-    <div style="padding:10px 12px 0"><span class="sub">${D.date} · 勾完一科的全部待办即可打卡</span></div>
+    <div style="padding:10px 16px 0"><span class="sub">${D.date} · 勾完一科的全部待办即可打卡</span></div>
     ${sessionCards('inline')}
     <div style="height:12px"></div>
   </div>` + tabbar(0);
@@ -621,27 +627,14 @@ PAGES.growth = function(){
     ${subjChips(state.calSubject, 'setCalSubject')}
     <div class="card">
       <div class="rowline"><h3>打卡日历 · 9月</h3><span class="sub">${state.calSubject}</span></div>
-      ${calendarGrid(state.calSubject)}
-      <div class="legend">
+      ${calendarGrid(state.calSubject, !state.calOpen)}
+      <button class="calarrow ${state.calOpen?'open':''}" onclick="toggleCal()" aria-label="展开或收起整月">▼</button>
+      ${state.calOpen?`<div class="legend">
         <span><i style="background:#E5F8EE"></i>已打卡</span>
         <span><i style="background:#FDEBEB"></i>漏卡</span>
         <span><i style="background:#F6F6F6;border:1px solid #E8E8E8"></i>休息日</span>
         <span><i style="background:#FFF4E3"></i>无作业日</span>
-      </div>
-    </div>
-    <div class="card">
-      <h3 style="margin-bottom:8px">各科连续打卡</h3>
-      ${(D.sessions[state.child]||[]).map(s=>{
-        const n=s.streak+(state.checkedIn[cinKey(state.child,s.subject)]?1:0);
-        return `<div class="rowline" style="padding:5px 0">
-          <span>${s.subject}</span>
-          <span style="display:flex;align-items:center;gap:8px">
-            <span style="width:110px;height:6px;border-radius:3px;background:#F0F0F0;overflow:hidden">
-              <span style="display:block;height:100%;width:${Math.min(n/30*100,100)}%;background:#07C160"></span>
-            </span>
-            <b style="font-variant-numeric:tabular-nums">×${n}</b>
-          </span></div>`;
-      }).join('')}
+      </div>`:''}
     </div>
     <div class="card">
       <div class="rowline"><h3>打卡动态</h3><span class="sub">仅监护人可见</span></div>
@@ -673,23 +666,27 @@ PAGES.growth = function(){
 };
 function setCalSubject(s){ state.calSubject=s; render(); }
 
-function calendarGrid(subj){
-  const start=2; // 2026-09-01 是周二
-  const days=30;
+function calendarGrid(subj, weekOnly){
+  const start=2; // 2026-09-01 是周二（网格以周日开头）
+  const days=30, today=23;
+  const curWeek=Math.floor((start+today-1)/7);
   let h='<div class="cal">'+'日一二三四五六'.split('').map(w=>`<span class="wd">${w}</span>`).join('');
-  for(let i=0;i<start;i++) h+='<span></span>';
+  if(!weekOnly) for(let i=0;i<start;i++) h+='<span></span>';
   for(let d=1;d<=days;d++){
-    const dow=(start+d-1)%7;
+    const idx=start+d-1;
+    if(weekOnly && Math.floor(idx/7)!==curWeek) continue;
+    const dow=idx%7;
     let cls='d', st='';
     if(dow===0||dow===6){ cls+=' rest'; st='休'; }
     else if(d===11){ cls+=' nhw'; st='无作业'; }
     else if(d%7===5||d%7===1){ cls+=' miss'; st='漏'; }
     else { cls+=' ok'; st='✓'; }
-    if(d===23) cls+=' today';
+    if(d===today) cls+=' today';
     h+=`<span class="${cls}">${d}<span class="st">${st}</span></span>`;
   }
   return h+'</div>';
 }
+function toggleCal(){ state.calOpen=!state.calOpen; render(); }
 
 /* ---- 打卡日历页（A/C 的二级页，与 B 成长同款日历） ---- */
 PAGES.calendar = function(){
@@ -794,7 +791,7 @@ PAGES.classDetail = function(){
   const idx = VARIANTS[state.variant].tabs.indexOf('classList');
   return head(c.name) + `
   <div class="body">
-    <div style="display:flex;gap:0;margin:10px 12px 0;background:var(--pcard);border:1px solid var(--pline);border-radius:10px;overflow:hidden">
+    <div style="display:flex;gap:0;margin:0;background:var(--pcard);border-bottom:1px solid var(--pline);overflow:hidden">
       ${tabs.map(t=>`<button style="flex:1;padding:9px 0;border:none;background:${state.classTab===t?'#07C160':'transparent'};color:${state.classTab===t?'#fff':'#666'};font-size:13.5px" onclick="setClassTab('${t}')">${tabName[t]}</button>`).join('')}
     </div>
     ${body}
@@ -828,7 +825,7 @@ PAGES.library = function(){
   const idx=VARIANTS[state.variant].tabs.indexOf('library');
   return head('资料库') + `
   <div class="body">
-    <div style="display:flex;gap:8px;margin:10px 12px 0">
+    <div style="display:flex;gap:8px;margin:10px 16px 0">
       ${D.classes.map(c=>`<button class="chip ${state.libClass===c.id?'on':''}" onclick="setLibClass('${c.id}')">${c.name}</button>`).join('')}
     </div>
     ${matList(state.libClass)}
@@ -1032,7 +1029,7 @@ PAGES.confirm = function(){
     </div>
     <details class="card"><summary style="font-size:13.5px">原文（会一起存档）</summary>
       <p class="sub" style="margin-top:8px">${D.parseText}</p></details>
-    <div style="display:flex;gap:8px;margin:12px">
+    <div style="display:flex;gap:8px;padding:12px 16px">
       <button class="btn ghost" style="margin:0" onclick="back()">放弃</button>
       <button class="btn ghost" style="margin:0" onclick="toast('重跑同 prompt · 温度 0.3')">重新解析</button>
       <button class="btn" style="margin:0" onclick="submitHomework()">确认入库</button>
