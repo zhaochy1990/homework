@@ -1,0 +1,176 @@
+.tabs {
+  display: flex;
+  border-bottom: var(--hairline) solid var(--color-line);
+  background: var(--color-bg);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.tab {
+  flex: 1;
+  padding: 22rpx 0;
+  text-align: center;
+  font-size: 28rpx;
+  color: var(--color-sub);
+}
+
+.tab.on {
+  color: var(--color-primary);
+  font-weight: 600;
+  box-shadow: inset 0 -4rpx 0 var(--color-primary);
+}
+
+.head {
+  padding-bottom: 8rpx;
+}
+
+.h3 {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.rowli {
+  padding: 18rpx 0;
+  border-bottom: var(--hairline) solid var(--color-line);
+}
+
+.rowli:last-child {
+  border-bottom: none;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.avatar {
+  width: 60rpx;
+  height: 60rpx;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #5b8def;
+  color: #ffffff;
+  font-size: 26rpx;
+}
+
+.avatar.grey {
+  background: #c8c9cc;
+}
+
+.li-title {
+  font-size: 28rpx;
+}
+
+.chip {
+  padding: 4rpx 18rpx;
+  border: var(--hairline) solid var(--color-line);
+  background: var(--color-fill);
+  color: var(--color-ink-2);
+  font-size: 24rpx;
+}
+
+.chip.on {
+  border-color: #beebd3;
+  background: #e8f8ef;
+  color: var(--color-primary);
+}
+
+.link {
+  color: var(--color-primary);
+  font-size: 28rpx;
+}
+
+.link.danger {
+  color: var(--color-danger);
+}
+
+.actions {
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+
+.actions .btn {
+  flex: 1;
+}
+
+.btn.small {
+  width: auto;
+  flex: 1;
+  padding: 14rpx 0;
+  font-size: 27rpx;
+}
+
+.btn.action {
+  margin-top: 20rpx;
+}
+
+.divider {
+  height: var(--hairline);
+  background: var(--color-line);
+  margin: 20rpx 0 12rpx;
+}
+
+.pad {
+  padding: 20rpx 0 8rpx;
+}
+
+.retry {
+  display: inline-block;
+  width: auto;
+  margin-top: 24rpx;
+  padding: 14rpx 44rpx;
+}
+
+.mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.modal {
+  width: 600rpx;
+  background: var(--color-bg);
+  padding: 40rpx 36rpx;
+  text-align: center;
+}
+
+.qr {
+  width: 420rpx;
+  margin: 24rpx 0 12rpx;
+}
+
+.code {
+  margin: 12rpx 0;
+  padding: 20rpx;
+  background: var(--color-fill);
+  font-size: 40rpx;
+  font-weight: 600;
+  letter-spacing: 4rpx;
+  color: var(--color-ink);
+}
+
+.modal .btn {
+  margin-top: 20rpx;
+}
+
+.modal .sub {
+  display: block;
+  margin-top: 8rpx;
+}

@@ -19,10 +19,10 @@
 </head>
 <body>
 <h1>v1 实施依赖 DAG · 21 张 ticket</h1>
-<p class="sub">箭头 A → B 表示 B 依赖 A。更新于 2026-09-23：T08 合入 → <b>10/21 已完成</b>（build/vet/测试全绿），<b>3 张可开工</b>（T10、T18、T19）。橙色路径为关键路径。</p>
+<p class="sub">箭头 A → B 表示 B 依赖 A。更新于 2026-09-23：T19 合入 → <b>11/21 已完成</b>（前端 tsc + selfcheck 全绿），<b>2 张可开工</b>（T10、T18）。橙色路径为关键路径。</p>
 <div class="legend">
-  <span><i style="background:#16A34A"></i>已完成（10）</span>
-  <span><i style="background:#BEF264;border:2px solid #65A30D"></i>可开工（3）</span>
+  <span><i style="background:#16A34A"></i>已完成（11）</span>
+  <span><i style="background:#BEF264;border:2px solid #65A30D"></i>可开工（2）</span>
   <span><i style="background:#E2E8F0"></i>阻塞中（8，底色仍示所属阶段）</span>
   <span><i style="background:#FFEDD5"></i>关键路径</span>
 </div>
@@ -54,7 +54,7 @@ flowchart LR
   T16[T16 今日页与打卡]:::cp
   T17[T17 成长页]:::m5
   T18["▶ 可开工 T18 资料库页"]:::ready
-  T19["▶ 可开工 T19 我的与班级页"]:::ready
+  T19["✓ T19 我的与班级页"]:::done
   T20[T20 发作业流]:::m5
   T21[T21 联调提审]:::m5
 

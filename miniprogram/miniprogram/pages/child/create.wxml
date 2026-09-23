@@ -1,0 +1,10 @@
+<view class="page">
+  <view class="card">
+    <view class="sub">孩子姓名</view>
+    <input class="input" value="{{name}}" placeholder="如：小瑶" maxlength="64" bindinput="onName" />
+    <view class="sub hint">添加后你会自动成为 TA 的监护人。</view>
+  </view>
+  <view class="card">
+    <button class="btn {{submitting ? 'disabled' : ''}}" disabled="{{submitting}}" bindtap="submit">添加孩子</button>
+  </view>
+</view>

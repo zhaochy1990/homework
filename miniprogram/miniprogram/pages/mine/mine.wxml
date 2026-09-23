@@ -6,11 +6,84 @@
     <button class="btn ghost retry" bindtap="retry">重试</button>
   </view>
 
-  <view class="card" wx:elif="{{me}}">
-    <view class="rowline">
-      <text class="name">{{me.nickname || '微信用户'}}</text>
-      <text class="sub">ID {{me.id}}</text>
+  <block wx:else>
+    <view class="card profile" wx:if="{{me}}">
+      <view class="avatar">{{me.nickname ? me.nickname[0] : '微'}}</view>
+      <view>
+        <view class="name">{{me.nickname || '微信用户'}}</view>
+        <view class="sub">微信登录 · STRIDE 认证</view>
+      </view>
     </view>
-    <view class="sub status">已通过 STRIDE 登录</view>
-  </view>
+
+    <view class="card">
+      <view class="rowline head">
+        <text class="h3">我的班级</text>
+        <text class="chip" bindtap="goCreateClass">＋ 建班</text>
+      </view>
+      <view
+        wx:for="{{classes}}"
+        wx:key="id"
+        class="rowline rowli"
+        data-id="{{item.id}}"
+        bindtap="goClass"
+      >
+        <view class="left">
+          <view class="avatar sm">{{item.name[0]}}</view>
+          <view>
+            <view class="li-title">{{item.name}}</view>
+            <view class="sub">{{item.visibility === 'public' ? '公开班' : '私密班'}}</view>
+          </view>
+        </view>
+        <view class="right">
+          <text class="chip {{item.role === 'admin' ? 'on' : ''}}">{{item.role === 'admin' ? '管理员' : '成员'}}</text>
+          <text class="sub">›</text>
+        </view>
+      </view>
+      <view wx:if="{{!classes.length}}" class="sub pad">还没有班级，先建一个或用邀请码加入。</view>
+      <view class="rowline rowli" bindtap="goJoinClass">
+        <text class="link">＋ 加入班级</text>
+        <text class="sub">›</text>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="rowline head">
+        <text class="h3">我的孩子</text>
+        <text class="chip" bindtap="goCreateChild">＋ 添加</text>
+      </view>
+      <view
+        wx:for="{{children}}"
+        wx:key="id"
+        class="rowline rowli"
+        data-id="{{item.id}}"
+        bindtap="goChild"
+      >
+        <view class="left">
+          <view class="avatar sm">{{item.name[0]}}</view>
+          <text class="li-title">{{item.name}}</text>
+        </view>
+        <text class="sub">›</text>
+      </view>
+      <view wx:if="{{!children.length}}" class="sub pad">还没有孩子，添加后即可报班、打卡。</view>
+    </view>
+
+    <view class="card">
+      <view class="rowline rowli" bindtap="inviteGuardian">
+        <text class="li-title">监护人邀请</text>
+        <text class="sub">邀请另一位家长 ›</text>
+      </view>
+      <view class="rowline rowli" bindtap="goCalendar">
+        <text class="li-title">上学日历</text>
+        <text class="sub">2026–2027 节假日 / 调休 ›</text>
+      </view>
+      <view class="rowline rowli" bindtap="goLibrary">
+        <text class="li-title">资料库</text>
+        <text class="sub">老师分享的学习资料 ›</text>
+      </view>
+      <view class="rowline rowli" bindtap="goSettings">
+        <text class="li-title">设置</text>
+        <text class="sub">›</text>
+      </view>
+    </view>
+  </block>
 </view>

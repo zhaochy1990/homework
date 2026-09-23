@@ -67,6 +67,28 @@ async function send<T>(opts: RequestOptions, useAuth: boolean, retried: boolean)
   throw err
 }
 
+/**
+ * 下载需要鉴权的二进制资源（如班级邀请小程序码），返回本地临时文件路径。
+ * 不能走 request()：<image>/previewImage 只认本地路径或公网 URL。
+ */
+export async function downloadAuthed(path: string): Promise<string> {
+  const header: Record<string, string> = { Authorization: 'Bearer ' + (await ensureAccessToken()) }
+  return new Promise((resolve, reject) => {
+    wx.downloadFile({
+      url: API_BASE_URL + path,
+      header,
+      success: (res) => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(res.tempFilePath)
+        } else {
+          reject(new ApiError(res.statusCode, { error: 'download_failed', message: '下载失败' }))
+        }
+      },
+      fail: (err) => reject(new Error(err.errMsg || '下载失败')),
+    })
+  })
+}
+
 /** 所有业务请求入口：拼 base URL、带 token、401 刷新重放、统一错误形状与 loading 约定。 */
 export async function request<T>(opts: RequestOptions): Promise<T> {
   const useAuth = opts.auth !== false

@@ -1,0 +1,48 @@
+.input {
+  flex: 1;
+  padding: 18rpx 0;
+  font-size: 30rpx;
+}
+
+.searchline {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  border-bottom: var(--hairline) solid var(--color-line);
+}
+
+.search {
+  width: auto;
+  padding: 12rpx 32rpx;
+  font-size: 27rpx;
+}
+
+.rowli {
+  padding: 18rpx 0;
+  border-bottom: var(--hairline) solid var(--color-line);
+}
+
+.rowli:last-child {
+  border-bottom: none;
+}
+
+.li-title {
+  font-size: 28rpx;
+}
+
+.actions {
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+
+.actions .btn {
+  flex: 1;
+}
+
+.pad {
+  padding: 20rpx 0 8rpx;
+}
+
+.note-line {
+  margin-top: 16rpx;
+}

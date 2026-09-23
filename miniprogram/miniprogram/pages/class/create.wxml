@@ -1,0 +1,32 @@
+<view class="page">
+  <view class="card">
+    <view class="sub">班级名称</view>
+    <input class="input" value="{{name}}" placeholder="如：一年二班" maxlength="64" bindinput="onName" />
+  </view>
+
+  <view class="card">
+    <view class="sub">可见性</view>
+    <radio-group class="radios" bindchange="onVisibility">
+      <label class="radio">
+        <radio value="public" checked="{{visibility === 'public'}}" color="#07c160" />
+        <text>公开班（可被搜索）</text>
+      </label>
+      <label class="radio">
+        <radio value="private" checked="{{visibility === 'private'}}" color="#07c160" />
+        <text>私密班（凭邀请码 / 小程序码加入）</text>
+      </label>
+    </radio-group>
+  </view>
+
+  <view class="card" wx:if="{{visibility === 'public'}}">
+    <view class="rowline">
+      <text class="li-title">加入需管理员审批</text>
+      <switch checked="{{joinApproval}}" color="#07c160" bindchange="onApproval" />
+    </view>
+    <view class="sub">关闭：成员一搜即入；开启：申请后需管理员同意。</view>
+  </view>
+
+  <view class="card">
+    <button class="btn {{submitting ? 'disabled' : ''}}" disabled="{{submitting}}" bindtap="submit">创建班级</button>
+  </view>
+</view>

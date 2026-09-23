@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,10 +19,11 @@ type classResponse struct {
 	Name         string `json:"name"`
 	Visibility   string `json:"visibility"`
 	JoinApproval bool   `json:"joinApproval"`
+	CreatedBy    uint64 `json:"createdBy"`
 }
 
 func toClass(c *model.Class) classResponse {
-	return classResponse{ID: c.ID, Name: c.Name, Visibility: c.Visibility, JoinApproval: c.JoinApproval}
+	return classResponse{ID: c.ID, Name: c.Name, Visibility: c.Visibility, JoinApproval: c.JoinApproval, CreatedBy: c.CreatedBy}
 }
 
 type myClassResponse struct {
@@ -33,6 +35,8 @@ type classDetailResponse struct {
 	classResponse
 	MyRole     string          `json:"myRole"`
 	MyChildren []childResponse `json:"myChildren"`
+	// InviteCode 仅对管理员返回：用于分享“邀请口令”与说明扫码头。
+	InviteCode string `json:"inviteCode,omitempty"`
 }
 
 func (s *Server) createClass(w http.ResponseWriter, r *http.Request) {
@@ -122,11 +126,15 @@ func (s *Server) getClass(w http.ResponseWriter, r *http.Request) {
 	for i := range children {
 		myChildren = append(myChildren, toChild(&children[i]))
 	}
-	httpx.JSON(w, http.StatusOK, classDetailResponse{
+	detail := classDetailResponse{
 		classResponse: toClass(c),
 		MyRole:        role,
 		MyChildren:    myChildren,
-	})
+	}
+	if role == class.RoleAdmin {
+		detail.InviteCode = c.InviteCode
+	}
+	httpx.JSON(w, http.StatusOK, detail)
 }
 
 func (s *Server) patchClass(w http.ResponseWriter, r *http.Request) {
@@ -468,7 +476,8 @@ func (s *Server) inviteQRCode(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	png, err := s.wechat.GetUnlimitedQRCode(r.Context(), c.InviteCode)
+	// scene 携带班级 id 与邀请码，扫码后跳转 join 页可直接识别班级。
+	png, err := s.wechat.GetUnlimitedQRCode(r.Context(), "pages/class/join", fmt.Sprintf("%d-%s", c.ID, c.InviteCode))
 	if err != nil {
 		middleware.Logger(r.Context()).Error("wechat qrcode", "err", err, "class_id", classID)
 		httpx.Write(w, http.StatusBadGateway, httpx.CodeWechatUnavailable, "小程序码生成失败")

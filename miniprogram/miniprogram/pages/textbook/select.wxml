@@ -1,0 +1,37 @@
+<view class="page">
+  <view class="card">
+    <view class="sub">{{subject}} · 从全局教材库选用</view>
+    <view class="searchline">
+      <input class="input" value="{{keyword}}" placeholder="教材名关键词" bindinput="onKeyword" bindconfirm="search" />
+      <button class="btn search" bindtap="search">搜索</button>
+    </view>
+    <view wx:if="{{!loading && !items.length}}" class="sub pad">全局库没有匹配教材，可在下方新建。</view>
+    <view
+      wx:for="{{items}}"
+      wx:key="id"
+      class="rowline rowli"
+      data-id="{{item.id}}"
+      bindtap="choose"
+    >
+      <view>
+        <view class="li-title">{{item.name}}</view>
+        <view class="sub">{{item.grade}} {{item.term}} · {{item.units.length}} 个单元</view>
+      </view>
+      <text class="link">选用</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="rowline rowli" bindtap="toggleCreate">
+      <text class="link">＋ 新建教材到全局库</text>
+      <text class="sub">{{creating ? '收起' : '展开'}}</text>
+    </view>
+    <block wx:if="{{creating}}">
+      <input class="input" value="{{name}}" placeholder="教材名（必填）" bindinput="onName" />
+      <input class="input" value="{{grade}}" placeholder="年级，如 一年级" bindinput="onGrade" />
+      <input class="input" value="{{term}}" placeholder="册别，如 上册" bindinput="onTerm" />
+      <button class="btn action" bindtap="create">创建并选用</button>
+      <view class="sub">单元可在资料上传时补充。</view>
+    </block>
+  </view>
+</view>

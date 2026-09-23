@@ -1,0 +1,29 @@
+<view class="page">
+  <view wx:if="{{error}}" class="empty">
+    <view>{{error}}</view>
+    <button class="btn ghost retry" bindtap="retry">重试</button>
+  </view>
+
+  <block wx:elif="{{child}}">
+    <view class="card">
+      <view class="sub">姓名</view>
+      <view class="searchline">
+        <input class="input" value="{{name}}" maxlength="64" bindinput="onName" bindblur="saveName" />
+        <button class="btn search" bindtap="saveName">保存</button>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="h3">监护人邀请</view>
+      <view class="sub">
+        另一位家长打开分享卡片即成为「{{child.name}}」的监护人，同一孩子的监护人权限相同。
+      </view>
+      <button class="btn action" open-type="share">分享邀请卡片</button>
+      <view class="sub hint">邀请 72 小时内有效。</view>
+    </view>
+
+    <view class="card">
+      <button class="btn ghost danger" bindtap="quit">退出监护</button>
+    </view>
+  </block>
+</view>

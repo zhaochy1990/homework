@@ -1,0 +1,27 @@
+.h3 {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-bottom: 14rpx;
+}
+
+.confirm {
+  margin-top: 40rpx;
+}
+
+.action {
+  margin-top: 30rpx;
+}
+
+.ok {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 24rpx;
+}
+
+.retry {
+  display: inline-block;
+  width: auto;
+  margin-top: 24rpx;
+  padding: 14rpx 44rpx;
+}

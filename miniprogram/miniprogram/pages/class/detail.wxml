@@ -1,0 +1,145 @@
+<view class="page">
+  <view wx:if="{{error}}" class="empty">
+    <view>{{error}}</view>
+    <button class="btn ghost retry" bindtap="retry">重试</button>
+  </view>
+
+  <block wx:elif="{{detail}}">
+    <view class="tabs">
+      <view class="tab {{tab === 'hw' ? 'on' : ''}}" data-tab="hw" bindtap="switchTab">作业</view>
+      <view class="tab {{tab === 'mat' ? 'on' : ''}}" data-tab="mat" bindtap="switchTab">资料</view>
+      <view class="tab {{tab === 'mem' ? 'on' : ''}}" data-tab="mem" bindtap="switchTab">成员</view>
+      <view class="tab {{tab === 'tb' ? 'on' : ''}}" data-tab="tb" bindtap="switchTab">教材</view>
+    </view>
+
+    <!-- 作业 -->
+    <block wx:if="{{tab === 'hw'}}">
+      <view class="card">
+        <view class="sub">班级作业与「标记无作业日」随 T20 上线。</view>
+        <button wx:if="{{isAdmin}}" class="btn ghost action" bindtap="goHomework">＋ 发作业</button>
+      </view>
+    </block>
+
+    <!-- 资料 -->
+    <block wx:elif="{{tab === 'mat'}}">
+      <view class="card">
+        <view class="sub">班级资料与资料库共用一套内容（T18）；资料先审后显，pending 对成员不可见。</view>
+        <button class="btn ghost action" bindtap="goLibrary">去资料库</button>
+      </view>
+    </block>
+
+    <!-- 成员 -->
+    <block wx:elif="{{tab === 'mem'}}">
+      <view class="card">
+        <view class="rowline head"><text class="h3">我的孩子</text></view>
+        <view
+          wx:for="{{myChildren}}"
+          wx:key="id"
+          class="rowline rowli"
+        >
+          <view class="left">
+            <view class="avatar">{{item.name[0]}}</view>
+            <text class="li-title">{{item.name}}</text>
+          </view>
+          <text class="link danger" data-id="{{item.id}}" bindtap="unenroll">退班</text>
+        </view>
+        <view
+          wx:for="{{availableChildren}}"
+          wx:key="id"
+          class="rowline rowli"
+        >
+          <view class="left">
+            <view class="avatar grey">{{item.name[0]}}</view>
+            <text class="li-title">{{item.name}}</text>
+          </view>
+          <text class="link" data-id="{{item.id}}" bindtap="enroll">报班</text>
+        </view>
+        <view wx:if="{{!myChildren.length && !availableChildren.length}}" class="sub pad">还没有孩子，先去「我的 → 添加」。</view>
+      </view>
+
+      <view class="card">
+        <view class="rowline head">
+          <text class="h3">成员 {{members.length}}</text>
+        </view>
+        <view
+          wx:for="{{members}}"
+          wx:key="userId"
+          class="rowline rowli"
+          data-id="{{item.userId}}"
+          data-role="{{item.role}}"
+          bindtap="memberTap"
+        >
+          <view class="left">
+            <view class="avatar">{{item.nickname ? item.nickname[0] : '微'}}</view>
+            <text class="li-title">{{item.nickname || '微信用户'}}</text>
+          </view>
+          <view class="right">
+            <text class="chip {{item.role === 'admin' ? 'on' : ''}}">{{item.role === 'admin' ? '管理员' : '成员'}}</text>
+            <text class="sub">›</text>
+          </view>
+        </view>
+
+        <view wx:if="{{isAdmin}}" class="rowline actions">
+          <button class="btn ghost small" bindtap="loadRequests">加入审批</button>
+          <button class="btn small" bindtap="showQR">邀请码 / 二维码</button>
+        </view>
+
+        <block wx:if="{{joinRequests.length}}">
+          <view class="divider"></view>
+          <view class="sub">待审批</view>
+          <view wx:for="{{joinRequests}}" wx:key="id" class="rowline rowli">
+            <text class="li-title">{{item.nickname || ('用户 ' + item.userId)}}</text>
+            <view class="right">
+              <text class="link" data-id="{{item.id}}" bindtap="rejectRequest">拒绝</text>
+              <text class="link" data-id="{{item.id}}" bindtap="approveRequest">同意</text>
+            </view>
+          </view>
+        </block>
+
+        <view class="divider"></view>
+        <view wx:if="{{isCreator}}" class="rowline rowli" bindtap="dissolve">
+          <text class="link danger">解散班级</text>
+        </view>
+        <view wx:else class="rowline rowli" bindtap="quit">
+          <text class="link danger">退出班级</text>
+        </view>
+      </view>
+    </block>
+
+    <!-- 教材 -->
+    <block wx:elif="{{tab === 'tb'}}">
+      <view class="card">
+        <view
+          wx:for="{{classTextbooks}}"
+          wx:key="subject"
+          class="rowline rowli"
+          data-subject="{{item.subject}}"
+          bindtap="goSelectTextbook"
+        >
+          <view>
+            <view class="li-title">{{item.subject}}</view>
+            <view class="sub">{{item.textbook.name}} · {{item.textbook.units.length}} 个单元</view>
+          </view>
+          <text class="chip">更换</text>
+        </view>
+        <view wx:if="{{!classTextbooks.length}}" class="sub pad">本班还没选用教材，资料按单元归纳前先选教材。</view>
+        <picker wx:if="{{isAdmin}}" mode="selector" range="{{subjects}}" bindchange="addTextbook">
+          <view class="rowline rowli"><text class="link">＋ 选用教材</text><text class="sub">›</text></view>
+        </picker>
+      </view>
+    </block>
+  </block>
+
+  <!-- 邀请码 / 二维码弹层 -->
+  <view wx:if="{{qrVisible}}" class="mask" bindtap="hideQR">
+    <view class="modal" catchtap="noop">
+      <view class="h3">邀请加入「{{detail.name}}」</view>
+      <image wx:if="{{qrPath}}" class="qr" src="{{qrPath}}" mode="widthFix" bindtap="previewQR" />
+      <view class="sub">邀请口令（加入页手动输入）</view>
+      <view class="code" bindtap="copyCode">{{inviteCode}}</view>
+      <view class="sub">对方微信扫码，或在「我的 → 加入班级」输入上方口令。</view>
+      <button class="btn" bindtap="copyCode">复制口令</button>
+      <button class="btn ghost" bindtap="hideQR">关闭</button>
+    </view>
+  </view>
+</view>

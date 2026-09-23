@@ -1,0 +1,51 @@
+.h3 {
+  font-size: 30rpx;
+  font-weight: 600;
+  padding-bottom: 8rpx;
+}
+
+.rowli {
+  padding: 16rpx 0;
+  border-bottom: var(--hairline) solid var(--color-line);
+}
+
+.rowli:last-child {
+  border-bottom: none;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.date {
+  color: var(--color-sub);
+  font-size: 26rpx;
+}
+
+.li-title {
+  font-size: 28rpx;
+}
+
+.tag {
+  padding: 2rpx 16rpx;
+  font-size: 24rpx;
+}
+
+.tag.holiday {
+  background: var(--color-warn-bg);
+  color: var(--color-warn-ink);
+}
+
+.tag.work {
+  background: var(--color-fill);
+  color: var(--color-ink-2);
+}
+
+.retry {
+  display: inline-block;
+  width: auto;
+  margin-top: 24rpx;
+  padding: 14rpx 44rpx;
+}

@@ -107,11 +107,12 @@ func (c *Client) accessToken(ctx context.Context) (string, error) {
 	return c.token, nil
 }
 
-// GetUnlimitedQRCode 生成 scene 对应的小程序码 PNG（进程内缓存 24h）。
+// GetUnlimitedQRCode 生成跳转到 page（空则默认首页）并携带 scene 的小程序码 PNG（进程内缓存 24h）。
 // ponytail: 进程内缓存，单实例足够；多实例改 COS/Redis。
-func (c *Client) GetUnlimitedQRCode(ctx context.Context, scene string) ([]byte, error) {
+func (c *Client) GetUnlimitedQRCode(ctx context.Context, page, scene string) ([]byte, error) {
+	cacheKey := page + "|" + scene
 	c.mu.Lock()
-	if e, ok := c.qrCache[scene]; ok && time.Since(e.at) < qrCacheTTL {
+	if e, ok := c.qrCache[cacheKey]; ok && time.Since(e.at) < qrCacheTTL {
 		c.mu.Unlock()
 		return e.png, nil
 	}
@@ -121,16 +122,20 @@ func (c *Client) GetUnlimitedQRCode(ctx context.Context, scene string) ([]byte, 
 	if err != nil {
 		return nil, err
 	}
-	body, err := json.Marshal(map[string]any{
+	body := map[string]any{
 		"scene":       scene,
 		"check_path":  false,
 		"env_version": c.envVersion,
 		"width":       430,
-	})
+	}
+	if page != "" {
+		body["page"] = page
+	}
+	payload, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
-	data, contentType, err := c.do(ctx, qrPath, body, token)
+	data, contentType, err := c.do(ctx, qrPath, payload, token)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +146,7 @@ func (c *Client) GetUnlimitedQRCode(ctx context.Context, scene string) ([]byte, 
 	}
 
 	c.mu.Lock()
-	c.qrCache[scene] = qrCacheEntry{png: data, at: time.Now()}
+	c.qrCache[cacheKey] = qrCacheEntry{png: data, at: time.Now()}
 	c.mu.Unlock()
 	return data, nil
 }

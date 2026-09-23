@@ -1,0 +1,23 @@
+<view class="page">
+  <view wx:if="{{error}}" class="empty">
+    <view>{{error}}</view>
+    <button class="btn ghost retry" bindtap="retry">重试</button>
+  </view>
+
+  <view wx:elif="{{!loading && !months.length}}" class="empty">暂无已核验的假日记录</view>
+
+  <block wx:else>
+    <view wx:for="{{months}}" wx:key="month" class="card">
+      <view class="h3">{{item.month}}</view>
+      <view wx:for="{{item.items}}" wx:for-item="day" wx:key="date" class="rowline rowli">
+        <view class="left">
+          <text class="date">{{day.date}}</text>
+          <text class="li-title">{{day.name || (day.type === 'holiday' ? '法定假期' : '调休补班')}}</text>
+        </view>
+        <text class="tag {{day.type === 'holiday' ? 'holiday' : 'work'}}">
+          {{day.type === 'holiday' ? '休' : '班'}}
+        </text>
+      </view>
+    </view>
+  </block>
+</view>

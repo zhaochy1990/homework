@@ -1,0 +1,44 @@
+.input {
+  flex: 1;
+  padding: 18rpx 0;
+  font-size: 30rpx;
+  border-bottom: var(--hairline) solid var(--color-line);
+}
+
+.searchline {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.search {
+  width: auto;
+  padding: 12rpx 32rpx;
+  font-size: 27rpx;
+}
+
+.rowli {
+  padding: 18rpx 0;
+  border-bottom: var(--hairline) solid var(--color-line);
+}
+
+.rowli:last-child {
+  border-bottom: none;
+}
+
+.li-title {
+  font-size: 28rpx;
+}
+
+.link {
+  color: var(--color-primary);
+  font-size: 28rpx;
+}
+
+.pad {
+  padding: 20rpx 0 8rpx;
+}
+
+.action {
+  margin-top: 24rpx;
+}

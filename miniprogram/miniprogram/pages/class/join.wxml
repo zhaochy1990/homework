@@ -1,0 +1,33 @@
+<view class="page">
+  <view class="card">
+    <view class="sub">搜索公开班</view>
+    <view class="searchline">
+      <input class="input" value="{{keyword}}" placeholder="班级名称" bindinput="onKeyword" bindconfirm="search" />
+      <button class="btn search" bindtap="search">搜索</button>
+    </view>
+    <view wx:if="{{searched && !results.length}}" class="sub pad">没有找到公开班，试试邀请口令。</view>
+    <view
+      wx:for="{{results}}"
+      wx:key="id"
+      class="rowline rowli"
+      data-id="{{item.id}}"
+      bindtap="joinPublic"
+    >
+      <view>
+        <view class="li-title">{{item.name}}</view>
+        <view class="sub">{{item.joinApproval ? '需管理员审批' : '可直接加入'}}</view>
+      </view>
+      <text class="sub">加入 ›</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="sub">邀请口令</view>
+    <input class="input" value="{{code}}" placeholder="如：12-abcd1234" bindinput="onCode" />
+    <view class="rowline actions">
+      <button class="btn ghost" bindtap="scan">扫码</button>
+      <button class="btn" bindtap="joinByCode">加入</button>
+    </view>
+    <view class="sub note-line">口令由班级管理员在「班级详情 → 成员 → 邀请码 / 二维码」分享。</view>
+  </view>
+</view>

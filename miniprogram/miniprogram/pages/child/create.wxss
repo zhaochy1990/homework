@@ -1,0 +1,10 @@
+.input {
+  margin-top: 12rpx;
+  padding: 20rpx 0;
+  border-bottom: var(--hairline) solid var(--color-line);
+  font-size: 30rpx;
+}
+
+.hint {
+  margin-top: 16rpx;
+}

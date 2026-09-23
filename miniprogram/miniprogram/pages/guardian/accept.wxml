@@ -1,0 +1,21 @@
+<view class="page">
+  <view wx:if="{{error}}" class="empty">
+    <view>{{error}}</view>
+    <button class="btn ghost retry" bindtap="goMine">返回我的</button>
+  </view>
+
+  <view wx:elif="{{done}}" class="empty">
+    <view class="ok">已成为孩子的监护人</view>
+    <button class="btn retry" bindtap="goMine">去「我的」查看</button>
+  </view>
+
+  <view wx:else class="card confirm">
+    <view class="h3">接受监护人邀请</view>
+    <view class="sub">
+      接受后你将与邀请人拥有相同权限：查看并打卡该孩子的作业、管理其班级与监护人。
+    </view>
+    <button class="btn action {{accepting ? 'disabled' : ''}}" disabled="{{accepting}}" bindtap="accept">
+      接受邀请
+    </button>
+  </view>
+</view>

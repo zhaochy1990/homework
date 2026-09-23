@@ -1,0 +1,28 @@
+.input {
+  margin-top: 12rpx;
+  padding: 20rpx 0;
+  border-bottom: var(--hairline) solid var(--color-line);
+  font-size: 30rpx;
+}
+
+.radios {
+  display: block;
+  margin-top: 8rpx;
+}
+
+.radio {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 18rpx 0;
+  font-size: 28rpx;
+  border-bottom: var(--hairline) solid var(--color-line);
+}
+
+.radio:last-child {
+  border-bottom: none;
+}
+
+.li-title {
+  font-size: 28rpx;
+}

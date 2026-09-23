@@ -59,7 +59,7 @@
 | `POST /classes` | 登录 | `{name, visibility: public\|private, joinApproval: bool}` → 创建者=admin |
 | `GET /classes/my` | 登录 | 我加入的班级（含角色） |
 | `GET /classes/public?keyword=&page=` | 登录 | 搜索公开班（按名称） |
-| `GET /classes/{classId}` | 成员 | 详情：我的角色、我在班内的孩子 |
+| `GET /classes/{classId}` | 成员 | 详情：我的角色、我在班内的孩子；admin 额外返回 `inviteCode`（分享邀请口令用） |
 | `PATCH /classes/{classId}` | admin | 改名/可见性/审批开关 |
 | `POST /join-requests` | 登录 | `{classId, inviteCode?}`。公开班无审批→自动通过（200, `status=approved`，即成 member）；公开班有审批→202 `status=pending`；私密班凭 `inviteCode`→直接 member（邀请码即授权，绕过审批开关）。重复申请 409 `already_exists` |
 | `GET /classes/{classId}/join-requests?status=pending` | admin | 待审批列表 |
@@ -69,7 +69,7 @@
 | `POST /classes/{classId}/members/{userId}/promote` \| `demote` | 创建者 | 任命/撤销 admin |
 | `DELETE /classes/{classId}/members/me` | 成员 | 退出班级（有孩子在班给出提示字段） |
 | `DELETE /classes/{classId}` | 创建者 | 解散；班内有孩子→409 `class_not_empty`；软删除 |
-| `GET /classes/{classId}/invite-qrcode` | admin | 微信小程序码（scene=inviteCode），PNG |
+| `GET /classes/{classId}/invite-qrcode` | admin | 微信小程序码：`page=pages/class/join`、`scene={classId}-{inviteCode}`，PNG；邀请口令前端即 `{classId}-{inviteCode}`，可在加入页手动输入 |
 
 ### 3.3 孩子入班
 

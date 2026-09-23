@@ -3,7 +3,16 @@
     "pages/today/today",
     "pages/growth/growth",
     "pages/library/library",
-    "pages/mine/mine"
+    "pages/mine/mine",
+    "pages/class/create",
+    "pages/class/detail",
+    "pages/class/join",
+    "pages/child/create",
+    "pages/child/detail",
+    "pages/guardian/accept",
+    "pages/calendar/index",
+    "pages/settings/index",
+    "pages/textbook/select"
   ],
   "window": {
     "navigationBarTextStyle": "black",

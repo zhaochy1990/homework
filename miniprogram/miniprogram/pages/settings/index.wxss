@@ -1,0 +1,16 @@
+.rowli {
+  padding: 18rpx 0;
+  border-bottom: var(--hairline) solid var(--color-line);
+}
+
+.rowli:last-child {
+  border-bottom: none;
+}
+
+.li-title {
+  font-size: 28rpx;
+}
+
+.btn.danger {
+  color: var(--color-danger);
+}

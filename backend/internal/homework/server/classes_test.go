@@ -245,6 +245,7 @@ func TestClassLeaveAndDissolve(t *testing.T) {
 
 func TestInviteQRCode(t *testing.T) {
 	var tokenFx, qrFx bool
+	var qrReq map[string]any
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/cgi-bin/stable_token":
@@ -252,6 +253,7 @@ func TestInviteQRCode(t *testing.T) {
 			_ = json.NewEncoder(w).Encode(map[string]any{"access_token": "tok", "expires_in": 7200})
 		case "/wxa/getwxacodeunlimit":
 			qrFx = true
+			_ = json.NewDecoder(r.Body).Decode(&qrReq)
 			w.Header().Set("Content-Type", "image/png")
 			_, _ = w.Write([]byte("\x89PNG\r\n\x1a\nfake"))
 		default:
@@ -280,6 +282,14 @@ func TestInviteQRCode(t *testing.T) {
 	if !tokenFx || !qrFx {
 		t.Fatalf("wechat endpoints not called: token=%v qr=%v", tokenFx, qrFx)
 	}
+	// 扫码需直接进入加入页，scene 携带 classId 以便识别班级（T19）。
+	if qrReq["page"] != "pages/class/join" {
+		t.Fatalf("qr page = %v", qrReq["page"])
+	}
+	scene, _ := qrReq["scene"].(string)
+	if !strings.HasPrefix(scene, fmt.Sprintf("%d-", cls)) || len(scene) <= len(fmt.Sprintf("%d-", cls)) {
+		t.Fatalf("qr scene = %q, want {classId}-{inviteCode}", scene)
+	}
 
 	// 非 admin 成员无权限。
 	if rec := do(e.h, http.MethodPost, "/api/v1/join-requests", tokB, strings.NewReader(joinBody(cls))); rec.Code != http.StatusOK {
@@ -288,6 +298,42 @@ func TestInviteQRCode(t *testing.T) {
 	rec = do(e.h, http.MethodGet, fmt.Sprintf("/api/v1/classes/%d/invite-qrcode", cls), tokB, nil)
 	if rec.Code != http.StatusForbidden {
 		t.Fatalf("member qrcode = %d, want 403", rec.Code)
+	}
+}
+
+// TestClassDetailInviteCode 邀请口令仅对 admin 返回，成员拿不到（T19 分享依赖）。
+func TestClassDetailInviteCode(t *testing.T) {
+	e := newEnv(t)
+	tokA := e.token("t19-creator")
+	tokB := e.token("t19-member")
+	cls := e.createClass(tokA, "邀请班", "private", false)
+
+	var detail struct {
+		MyRole     string `json:"myRole"`
+		InviteCode string `json:"inviteCode"`
+	}
+	rec := do(e.h, http.MethodGet, fmt.Sprintf("/api/v1/classes/%d", cls), tokA, nil)
+	if err := json.Unmarshal(rec.Body.Bytes(), &detail); err != nil {
+		t.Fatal(err)
+	}
+	if detail.MyRole != "admin" || detail.InviteCode == "" {
+		t.Fatalf("admin detail = %+v, want role=admin with inviteCode", detail)
+	}
+
+	body := fmt.Sprintf(`{"classId":%d,"inviteCode":%q}`, cls, detail.InviteCode)
+	if rec := do(e.h, http.MethodPost, "/api/v1/join-requests", tokB, strings.NewReader(body)); rec.Code != http.StatusOK {
+		t.Fatalf("join with code = %d %s", rec.Code, rec.Body)
+	}
+
+	var member struct {
+		InviteCode string `json:"inviteCode"`
+	}
+	rec = do(e.h, http.MethodGet, fmt.Sprintf("/api/v1/classes/%d", cls), tokB, nil)
+	if err := json.Unmarshal(rec.Body.Bytes(), &member); err != nil {
+		t.Fatal(err)
+	}
+	if member.InviteCode != "" {
+		t.Fatalf("member should not see inviteCode, got %q", member.InviteCode)
 	}
 }
 
