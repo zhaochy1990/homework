@@ -15,21 +15,23 @@ import (
 	"github.com/zhaochy1990/homework/backend/internal/homework/media"
 	"github.com/zhaochy1990/homework/backend/internal/homework/middleware"
 	"github.com/zhaochy1990/homework/backend/internal/homework/model"
+	"github.com/zhaochy1990/homework/backend/internal/homework/textbook"
 	"github.com/zhaochy1990/homework/backend/internal/homework/user"
 	"github.com/zhaochy1990/homework/backend/internal/homework/wechat"
 	"gorm.io/gorm"
 )
 
 type Server struct {
-	cfg      *config.Config
-	db       *gorm.DB
-	users    *user.Store
-	family   *family.Store
-	classes  *class.Store
-	calendar *cal.Store
-	invites  *family.InviteSigner
-	wechat   *wechat.Client
-	media    *media.Service
+	cfg       *config.Config
+	db        *gorm.DB
+	users     *user.Store
+	family    *family.Store
+	classes   *class.Store
+	calendar  *cal.Store
+	invites   *family.InviteSigner
+	wechat    *wechat.Client
+	media     *media.Service
+	textbooks *textbook.Store
 }
 
 // Option 覆盖装配时的默认依赖（测试注入用）。
@@ -49,14 +51,15 @@ func New(cfg *config.Config, db *gorm.DB, opts ...Option) (http.Handler, error) 
 		return nil, err
 	}
 	s := &Server{
-		cfg:      cfg,
-		db:       db,
-		users:    user.NewStore(db),
-		family:   family.NewStore(db),
-		classes:  class.NewStore(db),
-		calendar: cal.NewStore(db),
-		invites:  invites,
-		wechat:   wechat.NewClient(cfg.WeChat.AppID, cfg.WeChat.AppSecret, cfg.WeChat.APIBase, cfg.WeChat.EnvVersion),
+		cfg:       cfg,
+		db:        db,
+		users:     user.NewStore(db),
+		family:    family.NewStore(db),
+		classes:   class.NewStore(db),
+		calendar:  cal.NewStore(db),
+		invites:   invites,
+		wechat:    wechat.NewClient(cfg.WeChat.AppID, cfg.WeChat.AppSecret, cfg.WeChat.APIBase, cfg.WeChat.EnvVersion),
+		textbooks: textbook.NewStore(db),
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -116,6 +119,13 @@ func New(cfg *config.Config, db *gorm.DB, opts ...Option) (http.Handler, error) 
 	// 媒体直传（T07，api-contract §3.5）。
 	mux.Handle("POST /api/v1/media/upload-tickets", protect(s.createUploadTicket))
 	mux.Handle("POST /api/v1/media/upload-tickets/{uploadId}/confirm", protect(s.confirmUploadTicket))
+
+	// 教材库（T06，api-contract §3.4）。
+	mux.Handle("POST /api/v1/textbooks", protect(s.createTextbook))
+	mux.Handle("GET /api/v1/textbooks", protect(s.listTextbooks))
+	mux.Handle("POST /api/v1/textbooks/{textbookId}/units", protect(s.addTextbookUnits))
+	mux.Handle("PUT /api/v1/classes/{classId}/textbooks", protect(s.setClassTextbook))
+	mux.Handle("GET /api/v1/classes/{classId}/textbooks", protect(s.listClassTextbooks))
 
 	return middleware.Logging(mux), nil
 }
