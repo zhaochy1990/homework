@@ -185,6 +185,10 @@ func (s *Service) Confirm(ctx context.Context, userID uint64, uploadID string, s
 	if rec.UserID != userID || rec.Status == "cleaned" {
 		return nil, ErrTicketNotFound
 	}
+	// 凭证已过期：拒绝 confirm。同时收窄与孤儿清理并发删除同一对象的窗口。
+	if s.now().After(rec.ExpiresAt) {
+		return nil, ErrTicketNotFound
+	}
 	size, err := s.objects.Head(ctx, rec.ObjectKey)
 	if errors.Is(err, ErrObjectNotFound) {
 		return nil, ErrUploadMismatch
@@ -208,6 +212,9 @@ func (s *Service) Confirm(ctx context.Context, userID uint64, uploadID string, s
 }
 
 // CleanupOrphans 删除超时未 confirm 的 pending 对象并置 cleaned，返回清理条数。
+//
+// ponytail: 与 Confirm 共享对象时靠 ExpiresAt 先决条件裁剪窗口，极小概率下仍可能在 Head 后
+// 被本任务删除；v1 接受（需真正消除则应改为先原子 claim status 再删对象）。
 func (s *Service) CleanupOrphans(ctx context.Context) (int, error) {
 	expired, err := s.store.ListExpiredPending(ctx, s.now())
 	if err != nil {

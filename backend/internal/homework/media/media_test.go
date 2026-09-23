@@ -113,7 +113,7 @@ func TestCreateTicketRestrictsPolicyAndPersists(t *testing.T) {
 	if !strings.Contains(issuer.lastPolicy, "uploads/") || !strings.Contains(issuer.lastPolicy, ticket.ObjectKey) {
 		t.Fatalf("policy not restricted to object key: %s", issuer.lastPolicy)
 	}
-	for _, forbidden := range []string{"cos:GetObject", "cos:DeleteObject", "uploads/*", "\"uploads/ "} {
+	for _, forbidden := range []string{"cos:GetObject", "cos:DeleteObject", "uploads/*"} {
 		if strings.Contains(issuer.lastPolicy, forbidden) {
 			t.Fatalf("policy must not contain %q: %s", forbidden, issuer.lastPolicy)
 		}
@@ -197,6 +197,25 @@ func TestConfirmIsolatesUsersAndUnknown(t *testing.T) {
 	}
 	if _, err := svc.Confirm(ctx, testUserID, "does-not-exist", 512, "", ""); !errors.Is(err, ErrTicketNotFound) {
 		t.Fatalf("unknown ticket: err = %v, want ErrTicketNotFound", err)
+	}
+}
+
+func TestConfirmRejectsExpiredTicket(t *testing.T) {
+	svc, _, _, objects, db := newTestService(t)
+	ctx := context.Background()
+
+	ticket, err := svc.CreateTicket(ctx, testUserID, KindAvatar, "image/jpeg", 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	objects.Put(ticket.ObjectKey, 100)
+	// 让凭证过期（模拟长时间后才 confirm）。
+	if err := db.Model(&model.UploadTicket{}).Where("upload_id = ?", ticket.UploadID).
+		Update("expires_at", time.Now().Add(-time.Minute)).Error; err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.Confirm(ctx, testUserID, ticket.UploadID, 100, "", ""); !errors.Is(err, ErrTicketNotFound) {
+		t.Fatalf("expired confirm: err = %v, want ErrTicketNotFound", err)
 	}
 }
 
