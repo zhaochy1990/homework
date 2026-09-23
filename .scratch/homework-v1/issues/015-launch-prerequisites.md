@@ -2,7 +2,7 @@
 id: 015
 title: "Task: 上线前置资质与配置清单（HITL）"
 labels: [wayfinder:task]
-status: open
+status: closed
 assignee: pi
 blocked-by: []
 ---
@@ -24,3 +24,19 @@ blocked-by: []
 - 腾讯云简化为**一个子账号 + 预设策略 `QcloudCOSFullAccess`**：后端调 STS `GetFederationToken` 时用 session policy 把上传临时密钥收口到 `uploads/*`，控制台不建角色、不写自定义策略。
 - 已固定的值：`WECHAT_APPID=wx5bdb4b2269d80ce7`（`miniprogram/project.config.json`）、`DEEPSEEK_BASE_URL=https://api.deepseek.com`、`DEEPSEEK_MODEL=deepseek-flash`、`AUTH_JWT_ISSUER=auth-service`、`COS_DOMAIN` 由桶名+region 推导。
 - 待用户执行后回填：`API_DOMAIN`、`COS_BUCKET`/`COS_REGION`/`COS_APPID`、CAM 密钥、`WECHAT_APPSECRET`、`WX_MSGPUSH_TOKEN`/`WX_MSGPUSH_AESKEY`、`DEEPSEEK_API_KEY`、`AUTH_SERVICE_BASE_URL`/`AUTH_CLIENT_ID`/`AUTH_CLIENT_SECRET`。
+
+## Resolution
+
+用户决策（2026-09-23）：**当前能做的已全部做完，剩余配置项延后到上线之前执行**——清单文档（`docs/launch-checklist.md`）本身就是移交物，不再阻塞规划阶段。ticket 关闭，剩余项随清单进入实施/上线 effort。
+
+已实测固定的事实（后续 ticket 依赖）：
+- `WECHAT_APPID=wx5bdb4b2269d80ce7`；
+- DeepSeek 本账号可用模型：`deepseek-flash`（解析默认）/ `deepseek-v4-pro`（难例档位）——已同步 research/004 与 `docs/design/homework-parsing.md`；
+- CAM 简化方案实测通过：一个挂 `QcloudCOSFullAccess` 的子账号即可调 STS `GetFederationToken` 签发 `uploads/*` 临时密钥，无需自建策略/角色；
+- `DEEPSEEK_BASE_URL`、`AUTH_JWT_ISSUER` 已固定（见清单 .env 模板）。
+
+待上线前执行（清单 checkbox，均为控制台人工操作）：
+- COS 建桶 + 子账号密钥 → 回填 `COS_*` / `TENCENTCLOUD_*`；
+- 微信：类目确认、服务器域名白名单、AppSecret、消息推送回调（Token/AESKey）；
+- STRIDE：注册 application → `AUTH_CLIENT_ID/SECRET`（aud 校验依赖此值）；⚠️ `wechat_phone_bind` grant 部署版本待与 auth 侧确认；
+- 2026–2027 节假日调休表人工核验（research/005，verified 标记后才能驱动业务）。
