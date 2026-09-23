@@ -19,7 +19,7 @@
 </head>
 <body>
 <h1>v1 实施依赖 DAG · 21 张 ticket</h1>
-<p class="sub">箭头 A → B 表示 B 依赖 A。更新于 2026-09-23：T19 合入 → <b>11/21 已完成</b>（前端 tsc + selfcheck 全绿），<b>2 张可开工</b>（T10、T18）。橙色路径为关键路径。</p>
+<p class="sub">箭头 A → B 表示 B 依赖 A。更新于 2026-09-23：T10 合入 → <b>12/21 已完成</b>（后端 go test 全绿，含真实 key 解析验收），<b>1 张可开工</b>（T11）。橙色路径为关键路径。</p>
 <div class="legend">
   <span><i style="background:#16A34A"></i>已完成（11）</span>
   <span><i style="background:#BEF264;border:2px solid #65A30D"></i>可开工（2）</span>
@@ -45,8 +45,8 @@ flowchart LR
   T07["✓ T07 COS直传"]:::done
   T08["✓ T08 资料+内容安全"]:::done
   T09["✓ T09 上学日历"]:::done
-  T10["▶ 可开工 T10 LLM解析"]:::ready
-  T11[T11 作业入库]:::cp
+  T10["✓ T10 LLM解析"]:::done
+  T11["▶ 可开工 T11 作业入库"]:::ready
   T12[T12 勾选打卡]:::cp
   T13[T13 streak引擎]:::cp
   T14[T14 卡片生成]:::cp
