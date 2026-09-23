@@ -386,6 +386,13 @@ const D = {
     {subject:'数学', target:'append', existTodos:['口算天天练 P12（已勾选）','黄冈同步 P23-24，做完对答案'], todos:[['口算天天练 P13',15]]},
   ],
   parseNotes:'明天穿校服，带水彩笔',
+  checkins:[
+    {date:'9月22日 周二', subject:'语文', video:'00:42'},
+    {date:'9月22日 周二', subject:'数学', video:null},
+    {date:'9月21日 周一', subject:'语文', video:'01:15'},
+    {date:'9月20日 周日', subject:'英语', video:'00:38'},
+    {date:'9月19日 周六', subject:'语文', video:null},
+  ],
 };
 
 /* ================= 状态 ================= */
@@ -581,21 +588,14 @@ PAGES.today = function(){
   </div>` + tabbar(0);
 };
 
-/* ---- B 今日（摘要式） ---- */
+/* ---- B/D 今日（无摘要卡） ---- */
 PAGES.todayB = function(){
   const c=child();
-  const streaks=(D.sessions[c.id]||[]).map(s=>s.streak+(state.checkedIn[cinKey(c.id,s.subject)]?1:0));
-  const max=Math.max(...streaks,0);
+  const cin=(D.sessions[c.id]||[]).filter(s=>state.checkedIn[cinKey(c.id,s.subject)]).length;
   return head('今日') + `
   <div class="body">
     ${childChips()}
-    <div class="card" style="display:flex;align-items:center;gap:12px;margin-top:12px" onclick="switchTab(1)" role="button">
-      <div style="width:46px;height:46px;border-radius:50%;background:#E5F8EE;display:flex;align-items:center;justify-content:center;color:#07C160;font-size:19px;font-weight:700">×${max}</div>
-      <div style="flex:1">
-        <div style="font-weight:600">${c.name}的最长连续打卡（天）</div>
-        <div class="sub">连续天数、打卡日历、卡片墙都在「成长」›</div>
-      </div>
-    </div>
+    <div style="padding:10px 12px 0"><span class="sub">${D.date} · 今日 ${D.sessions[c.id].length} 科有作业 · 已打卡 ${cin} 科</span></div>
     ${sessionCards('compact')}
     <div style="height:12px"></div>
   </div>` + tabbar(0);
@@ -642,6 +642,20 @@ PAGES.growth = function(){
             <b style="font-variant-numeric:tabular-nums">×${n}</b>
           </span></div>`;
       }).join('')}
+    </div>
+    <div class="card">
+      <div class="rowline"><h3>打卡记录</h3><span class="sub">视频与卡片都在这里回看</span></div>
+      ${D.checkins.map(k=>`
+        <div class="rowline" style="padding:8px 0;border-bottom:1px solid var(--pline)"
+             onclick="${k.video?`openViewer(['video','打卡视频 · ${k.subject}','${k.video}'])`:`toast('该次打卡无视频 · 打卡卡片 ›')`}" role="button">
+          <div style="display:flex;align-items:center;gap:10px">
+            ${k.video
+              ? `<div style="position:relative;width:56px;height:38px;border-radius:7px;overflow:hidden" class="mockimg"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;text-shadow:0 0 4px rgba(0,0,0,.6)">▶ ${k.video}</span></div>`
+              : `<div class="mockimg" style="width:56px;height:38px;border-radius:7px;font-size:11px">无视频</div>`}
+            <span style="font-size:14px">${k.date} · ${k.subject}</span>
+          </div>
+          <span class="sub">已打卡 ✓ ›</span>
+        </div>`).join('')}
     </div>
     <div class="card">
       <div class="rowline"><h3>打卡卡片</h3><span class="sub">最近 30 天</span></div>
