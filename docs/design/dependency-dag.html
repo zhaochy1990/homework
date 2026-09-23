@@ -19,11 +19,11 @@
 </head>
 <body>
 <h1>v1 实施依赖 DAG · 21 张 ticket</h1>
-<p class="sub">箭头 A → B 表示 B 依赖 A。更新于 2026-09-23：<b>9/21 已完成</b>（后端 build/vet/测试全绿），<b>3 张可开工</b>（T08、T10、T19，依赖全部就绪）。橙色路径为关键路径。</p>
+<p class="sub">箭头 A → B 表示 B 依赖 A。更新于 2026-09-23：T08 合入 → <b>10/21 已完成</b>（build/vet/测试全绿），<b>3 张可开工</b>（T10、T18、T19）。橙色路径为关键路径。</p>
 <div class="legend">
-  <span><i style="background:#16A34A"></i>已完成（9）</span>
+  <span><i style="background:#16A34A"></i>已完成（10）</span>
   <span><i style="background:#BEF264;border:2px solid #65A30D"></i>可开工（3）</span>
-  <span><i style="background:#E2E8F0"></i>阻塞中（9，底色仍示所属阶段）</span>
+  <span><i style="background:#E2E8F0"></i>阻塞中（8，底色仍示所属阶段）</span>
   <span><i style="background:#FFEDD5"></i>关键路径</span>
 </div>
 <div class="card"><pre class="mermaid">
@@ -43,7 +43,7 @@ flowchart LR
   T05["✓ T05 入班联动"]:::done
   T06["✓ T06 教材库"]:::done
   T07["✓ T07 COS直传"]:::done
-  T08["▶ 可开工 T08 资料+内容安全"]:::ready
+  T08["✓ T08 资料+内容安全"]:::done
   T09["✓ T09 上学日历"]:::done
   T10["▶ 可开工 T10 LLM解析"]:::ready
   T11[T11 作业入库]:::cp
@@ -53,7 +53,7 @@ flowchart LR
   T15["✓ T15 小程序地基"]:::done
   T16[T16 今日页与打卡]:::cp
   T17[T17 成长页]:::m5
-  T18[T18 资料库页]:::m5
+  T18["▶ 可开工 T18 资料库页"]:::ready
   T19["▶ 可开工 T19 我的与班级页"]:::ready
   T20[T20 发作业流]:::m5
   T21[T21 联调提审]:::m5
