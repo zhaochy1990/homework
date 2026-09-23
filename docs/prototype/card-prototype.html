@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>打卡卡片海报设计稿</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;900&family=ZCOOL+KuaiLe&display=swap">
+<style>
+:root{
+  --bg:#EFF1EE; --panel:#FFFFFF; --ink:#1B1D1B; --muted:#6E736E; --line:#DDE0DC;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141816; --panel:#1C211E; --ink:#E8EAE7; --muted:#99A09A; --line:#2A302C;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141816; --panel:#1C211E; --ink:#E8EAE7; --muted:#99A09A; --line:#2A302C;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Noto Sans SC","PingFang SC",sans-serif; font-size:14px; line-height:1.6;
+  padding:32px 20px 80px;
+}
+.wrap{max-width:1160px;margin:0 auto}
+.kick{font-size:12px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+h1{font-size:20px;font-weight:700;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px;margin-top:6px;max-width:640px}
+.questions{
+  margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:14px 16px;max-width:640px;
+}
+.questions b{font-size:13px}
+.questions ol{padding-left:18px;margin-top:4px}
+.questions li{font-size:13px;margin:3px 0}
+.row{display:flex;gap:28px;flex-wrap:wrap;margin-top:28px;align-items:flex-start;justify-content:center}
+.vcol{width:330px;flex:none}
+.vlab{margin-bottom:10px}
+.vlab b{font-size:14px}
+.vlab span{display:block;font-size:12.5px;color:var(--muted)}
+.poster{
+  width:320px;aspect-ratio:3/4;border-radius:6px;overflow:hidden;position:relative;
+  box-shadow:0 12px 34px rgba(0,0,0,.16);
+}
+/* ============ A · 奖牌风（儿童友好） ============ */
+.pa{
+  background:linear-gradient(160deg,#FFF6DE 0%,#FFEDC2 55%,#FFE3AE 100%);
+  font-family:"ZCOOL KuaiLe","Noto Sans SC",sans-serif;color:#5B4300;
+  display:flex;flex-direction:column;align-items:center;text-align:center;padding:22px 24px;
+}
+.pa .sun{position:absolute;top:-34px;right:-34px;width:110px;height:110px;border-radius:50%;background:#FFD75E;opacity:.55}
+.pa .ribbon{
+  background:#FF8A3D;color:#fff;font-size:14px;padding:4px 18px;border-radius:99px;
+  letter-spacing:.1em;
+}
+.pa .kid{font-size:24px;margin-top:12px;color:#4A3600}
+.pa .date{font-size:12px;color:#9C8434;font-family:"Noto Sans SC",sans-serif}
+.pa .medal{
+  width:132px;height:132px;border-radius:50%;margin-top:14px;position:relative;
+  background:radial-gradient(circle at 32% 28%,#FFE082,#FFB93D 70%);
+  box-shadow:0 6px 0 #E8930C,0 14px 24px rgba(232,147,12,.35);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.pa .medal::before{
+  content:"";position:absolute;inset:7px;border-radius:50%;border:2px dashed rgba(255,255,255,.75);
+}
+.pa .num{font-size:44px;line-height:1;color:#7A4E00;font-variant-numeric:tabular-nums}
+.pa .mtxt{font-size:11px;color:#8A650A;letter-spacing:.14em;margin-top:2px}
+.pa .lan{
+  margin-top:12px;font-size:14px;color:#7A4E00;
+  background:rgba(255,255,255,.6);border-radius:99px;padding:3px 16px;
+}
+.pa .todos{
+  margin-top:12px;width:100%;background:#FFFDF6;border-radius:14px;padding:10px 14px;
+  border:2px solid #F5D98B;text-align:left;
+}
+.pa .todos div{font-size:12.5px;padding:3px 0;color:#5B4300;font-family:"Noto Sans SC",sans-serif}
+.pa .todos i{
+  display:inline-block;width:14px;height:14px;border-radius:50%;background:#59C46F;
+  color:#fff;font-size:9px;text-align:center;line-height:14px;margin-right:6px;font-style:normal;
+}
+.pa .foot{
+  margin-top:auto;display:flex;align-items:center;gap:8px;font-size:10px;color:#B08F2E;
+  font-family:"Noto Sans SC",sans-serif;
+}
+.pa .qr{width:34px;height:34px;background:#F0E2B0;border:1px solid #E3CC7E;border-radius:4px;
+  display:flex;align-items:center;justify-content:center;font-size:8px;color:#A8892E}
+/* ============ B · 证书风（简洁） ============ */
+.pb{
+  background:#FFFFFF;color:#1C1E1C;font-family:"Noto Serif SC",serif;
+  display:flex;flex-direction:column;align-items:center;text-align:center;padding:26px 30px;
+}
+.pb::before,.pb::after{
+  content:"";position:absolute;left:10px;right:10px;height:1px;background:#D8DCD6;
+}
+.pb::before{top:10px}
+.pb::after{bottom:10px}
+.pb .subject{
+  font-size:12px;letter-spacing:.5em;text-indent:.5em;color:#8B928B;margin-top:6px;
+}
+.pb .kid{font-size:26px;font-weight:900;margin-top:10px}
+.pb .date{font-family:"Noto Sans SC",sans-serif;font-size:11px;color:#A2A8A1;margin-top:3px}
+.pb .rule{
+  width:44px;height:2px;background:#07C160;margin:16px 0 12px;border-radius:1px;
+}
+.pb .num{font-size:64px;line-height:1;font-weight:900;color:#07C160;font-variant-numeric:tabular-nums}
+.pb .mtxt{font-size:11px;letter-spacing:.42em;text-indent:.42em;color:#6E736E;margin-top:6px}
+.pb .lan{font-size:12.5px;color:#4B4F4B;margin-top:14px}
+.pb .todos{margin-top:14px;width:100%;text-align:left}
+.pb .todos div{
+  font-size:12.5px;padding:6px 2px;color:#333633;font-family:"Noto Sans SC",sans-serif;
+  border-bottom:1px solid #EEF0ED;display:flex;justify-content:space-between;align-items:center;
+}
+.pb .todos div:last-child{border-bottom:none}
+.pb .todos .done{font-size:10px;color:#07C160}
+.pb .foot{
+  margin-top:auto;width:100%;display:flex;align-items:flex-end;justify-content:space-between;
+  font-family:"Noto Sans SC",sans-serif;
+}
+.pb .brand{font-size:10px;letter-spacing:.3em;color:#A2A8A1}
+.pb .qr{width:40px;height:40px;border:1px solid #D8DCD6;display:flex;align-items:center;justify-content:center;
+  font-size:8px;color:#A2A8A1;flex-direction:column;line-height:1.4}
+/* ============ C · 手账贴纸风（活泼） ============ */
+.pc{
+  background:
+    linear-gradient(#DCE8E0 1px,transparent 1px),
+    linear-gradient(90deg,#DCE8E0 1px,transparent 1px),
+    #FBFDF9;
+  background-size:18px 18px,18px 18px,auto;
+  color:#2E3A33;font-family:"ZCOOL KuaiLe","Noto Sans SC",sans-serif;
+  display:flex;flex-direction:column;align-items:center;text-align:center;padding:18px 20px;
+}
+.pc .tape{
+  width:110px;height:24px;background:rgba(255,138,61,.75);transform:rotate(-3deg);
+  margin-top:2px;border-left:2px dotted rgba(255,255,255,.6);border-right:2px dotted rgba(255,255,255,.6);
+}
+.pc .head{display:flex;align-items:baseline;gap:8px;margin-top:6px}
+.pc .kid{font-size:26px;color:#1F5B3F}
+.pc .subj{
+  font-size:13px;background:#1F5B3F;color:#fff;border-radius:8px;padding:2px 10px;
+  transform:rotate(2deg);display:inline-block;
+}
+.pc .date{font-size:11px;color:#7E8C84;font-family:"Noto Sans SC",sans-serif;margin-top:2px}
+.pc .streak{
+  margin-top:10px;display:inline-flex;align-items:baseline;gap:4px;
+  background:#FFF;box-shadow:0 3px 0 #E3E9E2;border-radius:12px;padding:6px 18px;
+  transform:rotate(-1.5deg);
+}
+.pc .num{font-size:40px;line-height:1;color:#FF6B35;font-variant-numeric:tabular-nums}
+.pc .mtxt{font-size:11px;color:#8A968E}
+.pc .lan{font-size:14px;color:#1F5B3F;margin-top:8px}
+.pc .lan u{
+  text-decoration:none;
+  background:linear-gradient(transparent 62%,#FFE38A 62%);
+}
+.pc .todos{
+  margin-top:10px;width:100%;display:flex;flex-direction:column;gap:6px;text-align:left;
+}
+.pc .todos div{
+  background:#FFF;border-radius:10px;padding:6px 12px;font-size:12.5px;
+  font-family:"Noto Sans SC",sans-serif;color:#39443D;box-shadow:0 2px 0 #E3E9E2;
+}
+.pc .todos div:nth-child(2n){transform:rotate(.6deg)}
+.pc .todos div:nth-child(2n+1){transform:rotate(-.5deg)}
+.pc .todos i{
+  display:inline-block;width:14px;height:14px;border-radius:5px;background:#59C46F;
+  color:#fff;font-size:9px;text-align:center;line-height:14px;margin-right:7px;font-style:normal;
+}
+.pc .foot{
+  margin-top:auto;display:flex;align-items:center;gap:8px;
+  font-size:10px;color:#8A968E;font-family:"Noto Sans SC",sans-serif;
+}
+.pc .qr{width:34px;height:34px;background:#fff;border-radius:6px;box-shadow:0 2px 0 #E3E9E2;
+  display:flex;align-items:center;justify-content:center;font-size:8px;color:#9AA8A0}
+.hint{margin-top:10px;font-size:12px;color:var(--muted);text-align:center}
+.throw{margin-top:34px;font-size:12px;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick">Wayfinder · Ticket 014</div>
+  <h1>打卡卡片海报 · 三版视觉稿</h1>
+  <p class="sub">内容口径已定（孩子名 / 日期 / 科目 / 连续打卡天数 / 完成待办），三版用的是<b>同一份内容</b>，差别只在风格。竖版 3:4，渲染尺寸 320×427（Go 实现按 750×1000 像素绘制，等比放大 2.34×）。</p>
+  <div class="questions">
+    <b>看完回答三件事：</b>
+    <ol>
+      <li>选哪一版？（或者"要 A 的奖牌 + B 的排版"这类混搭也行）</li>
+      <li>鼓励语要不要、由谁生成（固定文案池 / Go 按科目轮换）？</li>
+      <li>右下角小程序码放不放（扫了进小程序，分享回流用）？</li>
+    </ol>
+  </div>
+
+  <div class="row">
+    <!-- ============ A ============ -->
+    <div class="vcol">
+      <div class="vlab"><b>A · 奖牌风</b><span>儿童友好·暖色·奖杯感——把"连续 ×13"做成一枚金牌，激励感最直白；字体站酷快乐体（OFL 可商用）</span></div>
+      <div class="poster pa">
+        <div class="sun"></div>
+        <div class="ribbon">语 文 打 卡</div>
+        <div class="kid">果果</div>
+        <div class="date">9月23日 周二</div>
+        <div class="medal">
+          <div class="num">×13</div>
+          <div class="mtxt">连续打卡</div>
+        </div>
+        <div class="lan">坚持就是了不起！</div>
+        <div class="todos">
+          <div><i>✓</i>抄写第5课生词三遍</div>
+          <div><i>✓</i>背诵古诗《静夜思》</div>
+        </div>
+        <div class="foot"><span>作业打卡 · 习惯养成</span><div class="qr">小程序码</div></div>
+      </div>
+    </div>
+
+    <!-- ============ B ============ -->
+    <div class="vcol">
+      <div class="vlab"><b>B · 证书风</b><span>简洁庄重·留白·宋体大数字——像一张颁给孩子的"奖状"，家长愿意发朋友圈的克制版式；字体思源宋体（OFL）</span></div>
+      <div class="poster pb">
+        <div class="subject">语 文</div>
+        <div class="kid">果果</div>
+        <div class="date">2026年9月23日 · 星期二</div>
+        <div class="rule"></div>
+        <div class="num">13</div>
+        <div class="mtxt">连续打卡天数</div>
+        <div class="lan">每一天的坚持，都算数。</div>
+        <div class="todos">
+          <div><span>抄写第5课生词三遍</span><span class="done">已完成</span></div>
+          <div><span>背诵古诗《静夜思》</span><span class="done">已完成</span></div>
+        </div>
+        <div class="foot"><span class="brand">作业打卡</span><div class="qr">小程序<br>码</div></div>
+      </div>
+    </div>
+
+    <!-- ============ C ============ -->
+    <div class="vcol">
+      <div class="vlab"><b>C · 手账贴纸风</b><span>活泼·网格纸·贴纸胶带——像孩子手账里的一页，待办是歪歪扭扭的便利贴；荧光笔划重点的鼓励语</span></div>
+      <div class="poster pc">
+        <div class="tape"></div>
+        <div class="head"><span class="kid">果果</span><span class="subj">语文</span></div>
+        <div class="date">9月23日 周二</div>
+        <div class="streak"><span class="num">×13</span><span class="mtxt">连续打卡</span></div>
+        <div class="lan">今天也<u>超额完成</u>啦！</div>
+        <div class="todos">
+          <div><i>✓</i>抄写第5课生词三遍</div>
+          <div><i>✓</i>背诵古诗《静夜思》</div>
+        </div>
+        <div class="foot"><span>作业打卡 · 习惯养成</span><div class="qr">小程序码</div></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">Go 实现选型预告（选完版式后写进 checkin-card.md）：fogleman/gg 绘制 + 对应开源字体（OFL 授权可随包分发）；小程序码用后端调 getUnlimitedQRCode 生成后贴入。</p>
+  <p class="throw">丢弃式设计稿 · 选定后结论写入 docs/design/checkin-card.md（坐标级描述供 Go 照抄）</p>
+</div>
+</body>
+</html>
