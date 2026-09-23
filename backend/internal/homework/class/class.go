@@ -377,13 +377,6 @@ func (s *Store) AddGuardianToChildClasses(ctx context.Context, childID, userID u
 	})
 }
 
-func (s *Store) IsEnrolled(ctx context.Context, classID, childID uint64) (bool, error) {
-	var count int64
-	err := s.db.WithContext(ctx).Model(&model.ChildEnrollment{}).
-		Where("class_id = ? AND child_id = ?", classID, childID).Count(&count).Error
-	return count > 0, err
-}
-
 func (s *Store) ListChildrenInClass(ctx context.Context, classID uint64, offset, limit int) ([]model.Child, int64, error) {
 	var total int64
 	if err := s.db.WithContext(ctx).Model(&model.ChildEnrollment{}).
