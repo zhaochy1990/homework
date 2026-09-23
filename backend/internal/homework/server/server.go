@@ -7,6 +7,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/zhaochy1990/homework/backend/internal/homework/auth"
+	cal "github.com/zhaochy1990/homework/backend/internal/homework/calendar"
 	"github.com/zhaochy1990/homework/backend/internal/homework/class"
 	"github.com/zhaochy1990/homework/backend/internal/homework/config"
 	"github.com/zhaochy1990/homework/backend/internal/homework/family"
@@ -20,14 +21,15 @@ import (
 )
 
 type Server struct {
-	cfg     *config.Config
-	db      *gorm.DB
-	users   *user.Store
-	family  *family.Store
-	classes *class.Store
-	invites *family.InviteSigner
-	wechat  *wechat.Client
-	media   *media.Service
+	cfg      *config.Config
+	db       *gorm.DB
+	users    *user.Store
+	family   *family.Store
+	classes  *class.Store
+	calendar *cal.Store
+	invites  *family.InviteSigner
+	wechat   *wechat.Client
+	media    *media.Service
 }
 
 // Option 覆盖装配时的默认依赖（测试注入用）。
@@ -47,13 +49,14 @@ func New(cfg *config.Config, db *gorm.DB, opts ...Option) (http.Handler, error) 
 		return nil, err
 	}
 	s := &Server{
-		cfg:     cfg,
-		db:      db,
-		users:   user.NewStore(db),
-		family:  family.NewStore(db),
-		classes: class.NewStore(db),
-		invites: invites,
-		wechat:  wechat.NewClient(cfg.WeChat.AppID, cfg.WeChat.AppSecret, cfg.WeChat.APIBase, cfg.WeChat.EnvVersion),
+		cfg:      cfg,
+		db:       db,
+		users:    user.NewStore(db),
+		family:   family.NewStore(db),
+		classes:  class.NewStore(db),
+		calendar: cal.NewStore(db),
+		invites:  invites,
+		wechat:   wechat.NewClient(cfg.WeChat.AppID, cfg.WeChat.AppSecret, cfg.WeChat.APIBase, cfg.WeChat.EnvVersion),
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -106,6 +109,9 @@ func New(cfg *config.Config, db *gorm.DB, opts ...Option) (http.Handler, error) 
 	mux.Handle("POST /api/v1/children/{childId}/enrollments", protect(s.createEnrollment))
 	mux.Handle("DELETE /api/v1/children/{childId}/enrollments/{classId}", protect(s.deleteEnrollment))
 	mux.Handle("GET /api/v1/classes/{classId}/children", protect(s.listClassChildren))
+
+	// 上学日历（T09，api-contract §3.9）。
+	mux.Handle("GET /api/v1/school-calendar", protect(s.getSchoolCalendar))
 
 	// 媒体直传（T07，api-contract §3.5）。
 	mux.Handle("POST /api/v1/media/upload-tickets", protect(s.createUploadTicket))

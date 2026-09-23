@@ -1,0 +1,15 @@
+[
+  {"date": "2026-01-01", "type": "holiday", "name": "元旦", "verified": false},
+  {"date": "2026-02-16", "type": "holiday", "name": "春节（除夕）", "verified": false},
+  {"date": "2026-02-17", "type": "holiday", "name": "春节（初一）", "verified": false},
+  {"date": "2026-02-18", "type": "holiday", "name": "春节（初二）", "verified": false},
+  {"date": "2026-02-19", "type": "holiday", "name": "春节（初三）", "verified": false},
+  {"date": "2026-04-05", "type": "holiday", "name": "清明节", "verified": false},
+  {"date": "2026-05-01", "type": "holiday", "name": "劳动节", "verified": false},
+  {"date": "2026-05-02", "type": "holiday", "name": "劳动节", "verified": false},
+  {"date": "2026-06-19", "type": "holiday", "name": "端午节", "verified": false},
+  {"date": "2026-09-25", "type": "holiday", "name": "中秋节", "verified": false},
+  {"date": "2026-10-01", "type": "holiday", "name": "国庆节", "verified": false},
+  {"date": "2026-10-02", "type": "holiday", "name": "国庆节", "verified": false},
+  {"date": "2026-10-03", "type": "holiday", "name": "国庆节", "verified": false}
+]
