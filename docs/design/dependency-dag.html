@@ -19,45 +19,42 @@
 </head>
 <body>
 <h1>v1 实施依赖 DAG · 21 张 ticket</h1>
-<p class="sub">箭头 A → B 表示 B 依赖 A。颜色 = 阶段。橙色路径为关键路径（决定总工期）。</p>
+<p class="sub">箭头 A → B 表示 B 依赖 A。更新于 2026-09-23：<b>9/21 已完成</b>（后端 build/vet/测试全绿），<b>3 张可开工</b>（T08、T10、T19，依赖全部就绪）。橙色路径为关键路径。</p>
 <div class="legend">
-  <span><i style="background:#DBEAFE"></i>M0 地基</span>
-  <span><i style="background:#FEF3C7"></i>M1 家庭班级</span>
-  <span><i style="background:#DCFCE7"></i>M2 教材媒体</span>
-  <span><i style="background:#EDE9FE"></i>M3 作业核心</span>
-  <span><i style="background:#FCE7F3"></i>M4 进度</span>
-  <span><i style="background:#F1F5F9"></i>M5 小程序</span>
+  <span><i style="background:#16A34A"></i>已完成（9）</span>
+  <span><i style="background:#BEF264;border:2px solid #65A30D"></i>可开工（3）</span>
+  <span><i style="background:#E2E8F0"></i>阻塞中（9，底色仍示所属阶段）</span>
   <span><i style="background:#FFEDD5"></i>关键路径</span>
 </div>
 <div class="card"><pre class="mermaid">
 flowchart LR
-  classDef m0 fill:#DBEAFE,stroke:#3B82F6,color:#1E3A5F
-  classDef m1 fill:#FEF3C7,stroke:#D97706,color:#5F3A00
-  classDef m2 fill:#DCFCE7,stroke:#16A34A,color:#14532D
-  classDef m3 fill:#EDE9FE,stroke:#7C3AED,color:#3B1F66
-  classDef m4 fill:#FCE7F3,stroke:#DB2777,color:#701A40
-  classDef m5 fill:#F1F5F9,stroke:#64748B,color:#1E293B
+  classDef done fill:#16A34A,stroke:#14532D,color:#FFFFFF
+  classDef ready fill:#BEF264,stroke:#65A30D,color:#1A2E05,stroke-width:3px
+  classDef m2 fill:#F8FAFC,stroke:#94A3B8,color:#475569
+  classDef m3 fill:#F8FAFC,stroke:#94A3B8,color:#475569
+  classDef m4 fill:#F8FAFC,stroke:#94A3B8,color:#475569
+  classDef m5 fill:#F8FAFC,stroke:#94A3B8,color:#475569
   classDef cp fill:#FFEDD5,stroke:#C2410C,color:#7C2D12,stroke-width:2.5px
 
-  T01[T01 脚手架]:::cp
-  T02[T02 认证]:::cp
-  T03[T03 孩子监护]:::m1
-  T04[T04 班级成员]:::cp
-  T05[T05 入班联动]:::m1
-  T06[T06 教材库]:::m2
-  T07[T07 COS直传]:::m2
-  T08[T08 资料+内容安全]:::m2
-  T09[T09 上学日历]:::m3
-  T10[T10 LLM解析]:::cp
+  T01["✓ T01 脚手架"]:::done
+  T02["✓ T02 认证"]:::done
+  T03["✓ T03 孩子监护"]:::done
+  T04["✓ T04 班级成员"]:::done
+  T05["✓ T05 入班联动"]:::done
+  T06["✓ T06 教材库"]:::done
+  T07["✓ T07 COS直传"]:::done
+  T08["▶ 可开工 T08 资料+内容安全"]:::ready
+  T09["✓ T09 上学日历"]:::done
+  T10["▶ 可开工 T10 LLM解析"]:::ready
   T11[T11 作业入库]:::cp
   T12[T12 勾选打卡]:::cp
   T13[T13 streak引擎]:::cp
   T14[T14 卡片生成]:::cp
-  T15[T15 小程序地基]:::m5
+  T15["✓ T15 小程序地基"]:::done
   T16[T16 今日页与打卡]:::cp
   T17[T17 成长页]:::m5
   T18[T18 资料库页]:::m5
-  T19[T19 我的与班级页]:::m5
+  T19["▶ 可开工 T19 我的与班级页"]:::ready
   T20[T20 发作业流]:::m5
   T21[T21 联调提审]:::m5
 
