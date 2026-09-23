@@ -239,6 +239,8 @@ aside.panel{width:330px;flex:none;position:sticky;top:24px}
 .cal .d.rest{background:var(--pcard);color:#C3C3C3;border:1px solid var(--pline)}
 .cal .d.nhw{background:#FFF4E3;color:#C87D0D}
 .cal .d.today{outline:2px solid var(--pa);outline-offset:-2px}
+.cal .d.click{cursor:pointer}
+.cal .d.sel{outline:2px solid var(--pa);outline-offset:-2px;background:#E5F8EE}
 .mkrow{display:flex;gap:3px;justify-content:center;align-items:center;height:8px;margin-top:2px}
 .mk{width:7px;height:7px;background:currentColor;flex:none}
 .mk.dot{border-radius:50%}
@@ -434,6 +436,7 @@ const state = {
   libClass:'c1',      // A 资料库的班级选择
   calSubject:'语文',
   calOpen:false,
+  feedDate:null,
 };
 let parseTimer = null;
 
@@ -632,13 +635,22 @@ PAGES.growth = function(){
     ${childChips()}
     <div class="card">
       <div class="rowline"><h3>打卡日历 · 9月</h3></div>
-      ${calendarGrid(!state.calOpen)}
+      ${calendarGrid(!state.calOpen, true)}
       <button class="calarrow ${state.calOpen?'open':''}" onclick="toggleCal()" aria-label="展开或收起整月">▼</button>
       ${state.calOpen?CAL_LEGEND:''}
     </div>
     <div class="card">
-      <div class="rowline"><h3>打卡动态</h3><span class="sub">仅监护人可见</span></div>
-      ${D.checkins.map(k=>{
+      <div class="rowline">
+        <h3>打卡动态</h3>
+        ${state.feedDate
+          ? `<span class="chip on" onclick="pickDay(${state.feedDate})" role="button">9月${state.feedDate}日 ✕</span>`
+          : '<span class="sub">点日历某天可只看那天</span>'}
+      </div>
+      ${(()=>{
+        const all=D.checkins.map(k=>Object.assign({},k,{day:+((k.date.match(/9月(\d+)日/)||[])[1]||0)}));
+        const shown=state.feedDate ? all.filter(k=>k.day===state.feedDate) : all.slice(0,3);
+        if(!shown.length) return '<div class="empty">这一天还没有打卡记录</div>';
+        return shown.map(k=>{
         const ch=D.children.find(x=>x.id===state.child);
         const tiles=k.media.map(m=>m[0]==='video'
           ? `<div style="position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden" class="mockimg" onclick="openViewer(['video','打卡视频 · ${k.subject}','${m[1]}'])"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;text-shadow:0 0 4px rgba(0,0,0,.6)">▶ ${m[1]}</span></div>`
@@ -653,7 +665,9 @@ PAGES.growth = function(){
             <div style="margin-top:8px"><span class="sub" style="color:var(--pa)" onclick="toast('该次打卡的海报 · 预签名 URL')" role="button">打卡卡片 ›</span></div>
           </div>
         </div>`;
-      }).join('')}
+        }).join('');
+      })()}
+      ${!state.feedDate?`<div class="rowline" style="padding-top:6px" onclick="toast('更早的打卡分页加载：GET /checkins?from=&to=&page=')" role="button"><span class="sub" style="color:var(--pa)">加载更早的打卡 ›</span></div>`:''}
     </div>
     <div class="card">
       <div class="rowline"><h3>打卡卡片</h3><span class="sub">最近 30 天</span></div>
@@ -674,7 +688,7 @@ const CAL_LEGEND=`<div class="legend">
   <span><span class="mk dia ok" style="display:inline-block;vertical-align:-1px"></span>科学</span>
   <span>绿=已打卡</span><span>红=漏卡</span>
 </div>`;
-function calendarGrid(weekOnly){
+function calendarGrid(weekOnly, interactive){
   const start=2; // 2026-09-01 是周二（网格以周日开头）
   const days=30, today=23;
   const curWeek=Math.floor((start+today-1)/7);
@@ -696,11 +710,14 @@ function calendarGrid(weekOnly){
       inner+=`<span class="mkrow">${mks}</span>`;
     } else inner+='<span class="mkrow"></span>';
     if(d===today) cls+=' today';
-    h+=`<span class="${cls}">${inner}</span>`;
+    const clicky = interactive && d<=today && dow!==0 && dow!==6 && d!==11;
+    if(clicky){ cls+=' click'; if(state.feedDate===d) cls+=' sel'; }
+    h+=`<span class="${cls}"${clicky?` onclick="pickDay(${d})"`:''}>${inner}</span>`;
   }
   return h+'</div>';
 }
 function toggleCal(){ state.calOpen=!state.calOpen; render(); }
+function pickDay(d){ state.feedDate = state.feedDate===d ? null : d; render(); }
 
 /* ---- 打卡日历页（A/C 的二级页，与 B 成长同款日历） ---- */
 PAGES.calendar = function(){
