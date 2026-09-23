@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v1 实施依赖 DAG</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<style>
+  body{margin:0;padding:24px;background:#F4F6F2;font-family:"Noto Sans SC","PingFang SC",sans-serif;color:#1B1D1B}
+  h1{font-size:18px;margin:0 0 4px}
+  .sub{font-size:13px;color:#6E736E;margin-bottom:16px}
+  .card{background:#fff;border-radius:10px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.06);overflow:auto}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 14px;font-size:12.5px}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+  .cp{margin-top:14px;font-size:13px}
+  .cp b{color:#C2410C}
+</style>
+</head>
+<body>
+<h1>v1 实施依赖 DAG · 21 张 ticket</h1>
+<p class="sub">箭头 A → B 表示 B 依赖 A。颜色 = 阶段。橙色路径为关键路径（决定总工期）。</p>
+<div class="legend">
+  <span><i style="background:#DBEAFE"></i>M0 地基</span>
+  <span><i style="background:#FEF3C7"></i>M1 家庭班级</span>
+  <span><i style="background:#DCFCE7"></i>M2 教材媒体</span>
+  <span><i style="background:#EDE9FE"></i>M3 作业核心</span>
+  <span><i style="background:#FCE7F3"></i>M4 进度</span>
+  <span><i style="background:#F1F5F9"></i>M5 小程序</span>
+  <span><i style="background:#FFEDD5"></i>关键路径</span>
+</div>
+<div class="card"><pre class="mermaid">
+flowchart LR
+  classDef m0 fill:#DBEAFE,stroke:#3B82F6,color:#1E3A5F
+  classDef m1 fill:#FEF3C7,stroke:#D97706,color:#5F3A00
+  classDef m2 fill:#DCFCE7,stroke:#16A34A,color:#14532D
+  classDef m3 fill:#EDE9FE,stroke:#7C3AED,color:#3B1F66
+  classDef m4 fill:#FCE7F3,stroke:#DB2777,color:#701A40
+  classDef m5 fill:#F1F5F9,stroke:#64748B,color:#1E293B
+  classDef cp fill:#FFEDD5,stroke:#C2410C,color:#7C2D12,stroke-width:2.5px
+
+  T01[T01 脚手架]:::cp
+  T02[T02 认证]:::cp
+  T03[T03 孩子监护]:::m1
+  T04[T04 班级成员]:::cp
+  T05[T05 入班联动]:::m1
+  T06[T06 教材库]:::m2
+  T07[T07 COS直传]:::m2
+  T08[T08 资料+内容安全]:::m2
+  T09[T09 上学日历]:::m3
+  T10[T10 LLM解析]:::cp
+  T11[T11 作业入库]:::cp
+  T12[T12 勾选打卡]:::cp
+  T13[T13 streak引擎]:::cp
+  T14[T14 卡片生成]:::cp
+  T15[T15 小程序地基]:::m5
+  T16[T16 今日页与打卡]:::cp
+  T17[T17 成长页]:::m5
+  T18[T18 资料库页]:::m5
+  T19[T19 我的与班级页]:::m5
+  T20[T20 发作业流]:::m5
+  T21[T21 联调提审]:::m5
+
+  T01 --> T02
+  T02 --> T03
+  T02 --> T06
+  T02 --> T07
+  T02 --> T09
+  T02 --> T15
+  T03 --> T04
+  T04 --> T05
+  T04 --> T08
+  T04 --> T10
+  T06 --> T08
+  T07 --> T08
+  T09 --> T10
+  T03 --> T19
+  T04 --> T19
+  T05 --> T19
+  T06 --> T19
+  T05 --> T11
+  T08 --> T11
+  T09 --> T11
+  T10 --> T11
+  T08 --> T18
+  T15 --> T18
+  T10 --> T20
+  T11 --> T20
+  T15 --> T20
+  T11 --> T12
+  T12 --> T13
+  T12 --> T14
+  T13 --> T14
+  T11 --> T16
+  T12 --> T16
+  T13 --> T16
+  T14 --> T16
+  T15 --> T16
+  T12 --> T17
+  T13 --> T17
+  T14 --> T17
+  T15 --> T17
+  T16 --> T21
+  T17 --> T21
+  T18 --> T21
+  T19 --> T21
+  T20 --> T21
+</pre></div>
+<p class="cp">关键路径（最长链，决定总工期）：<b>T01 → T02 → T03 → T04 → T10 → T11 → T12 → T13 → T14 → T16 → T21</b>（11 张串行，无一张可压缩）。</p>
+<script>mermaid.initialize({startOnLoad:true, flowchart:{nodeSpacing:28, rankSpacing:52, curve:'basis'}});</script>
+</body>
+</html>
