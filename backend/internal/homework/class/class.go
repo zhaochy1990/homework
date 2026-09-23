@@ -21,6 +21,7 @@ var (
 	ErrClassNotEmpty     = errors.New("class: 班级仍有孩子在班")
 	ErrAlreadyExists     = errors.New("class: 已是成员或已有待审批申请")
 	ErrAlreadyDecided    = errors.New("class: 申请已处理")
+	ErrNotEnrolled       = errors.New("class: 孩子不在班")
 )
 
 const (
@@ -291,6 +292,138 @@ func (s *Store) Dissolve(ctx context.Context, classID uint64) error {
 		}
 		return nil
 	})
+}
+
+// ---------- 孩子入班与权限联动（T05，api-contract §3.3） ----------
+
+// EnrollChild 孩子入班，同一事务内把孩子全部监护人补为 class member。
+// 监护人须已是成员由 handler 校验（否则 403）。重复入班→ErrAlreadyExists。
+func (s *Store) EnrollChild(ctx context.Context, classID, childID uint64) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var existing model.ChildEnrollment
+		err := tx.Where("class_id = ? AND child_id = ?", classID, childID).First(&existing).Error
+		if err == nil {
+			return ErrAlreadyExists
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		if err := tx.Create(&model.ChildEnrollment{ChildID: childID, ClassID: classID}).Error; err != nil {
+			return err
+		}
+		return addGuardiansAsMembers(tx, classID, childID)
+	})
+}
+
+// UnenrollChild 退班：删 enrollment，并回收"因该孩子入班"获得的成员权限
+// —— 该监护人无其他孩子在班且非 admin 时移除（data-model 实现备忘）。
+// 勾选/打卡历史不删，只是不再展示。
+func (s *Store) UnenrollChild(ctx context.Context, classID, childID uint64) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		res := tx.Where("class_id = ? AND child_id = ?", classID, childID).Delete(&model.ChildEnrollment{})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return ErrNotEnrolled
+		}
+
+		var guardians []model.Guardianship
+		if err := tx.Where("child_id = ?", childID).Find(&guardians).Error; err != nil {
+			return err
+		}
+		for _, g := range guardians {
+			stillIn, err := guardianHasOtherChildInClass(tx, classID, g.UserID)
+			if err != nil {
+				return err
+			}
+			if stillIn {
+				continue
+			}
+			var m model.ClassMember
+			err = tx.Where("class_id = ? AND user_id = ?", classID, g.UserID).First(&m).Error
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				continue
+			}
+			if err != nil {
+				return err
+			}
+			if m.Role == RoleAdmin {
+				continue
+			}
+			if err := tx.Delete(&m).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// AddGuardianToChildClasses 把 user 加为孩子所在全部班级的 member；
+// 监护关系建立（T03 接受邀请）时调用。
+func (s *Store) AddGuardianToChildClasses(ctx context.Context, childID, userID uint64) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var enrollments []model.ChildEnrollment
+		if err := tx.Where("child_id = ?", childID).Find(&enrollments).Error; err != nil {
+			return err
+		}
+		for _, e := range enrollments {
+			if err := tx.Clauses(clause.OnConflict{DoNothing: true}).
+				Create(&model.ClassMember{ClassID: e.ClassID, UserID: userID, Role: RoleMember}).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (s *Store) IsEnrolled(ctx context.Context, classID, childID uint64) (bool, error) {
+	var count int64
+	err := s.db.WithContext(ctx).Model(&model.ChildEnrollment{}).
+		Where("class_id = ? AND child_id = ?", classID, childID).Count(&count).Error
+	return count > 0, err
+}
+
+func (s *Store) ListChildrenInClass(ctx context.Context, classID uint64, offset, limit int) ([]model.Child, int64, error) {
+	var total int64
+	if err := s.db.WithContext(ctx).Model(&model.ChildEnrollment{}).
+		Where("class_id = ?", classID).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var children []model.Child
+	err := s.db.WithContext(ctx).
+		Model(&model.Child{}).
+		Select("children.*").
+		Joins("JOIN child_enrollments ON child_enrollments.child_id = children.id").
+		Where("child_enrollments.class_id = ?", classID).
+		Order("children.id").
+		Offset(offset).Limit(limit).
+		Find(&children).Error
+	return children, total, err
+}
+
+// addGuardiansAsMembers 把孩子全部监护人补为该班 member（已存在则保留原角色）。
+func addGuardiansAsMembers(tx *gorm.DB, classID, childID uint64) error {
+	var guardians []model.Guardianship
+	if err := tx.Where("child_id = ?", childID).Find(&guardians).Error; err != nil {
+		return err
+	}
+	for _, g := range guardians {
+		if err := tx.Clauses(clause.OnConflict{DoNothing: true}).
+			Create(&model.ClassMember{ClassID: classID, UserID: g.UserID, Role: RoleMember}).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func guardianHasOtherChildInClass(tx *gorm.DB, classID, userID uint64) (bool, error) {
+	var count int64
+	err := tx.Table("child_enrollments").
+		Joins("JOIN guardianships ON guardianships.child_id = child_enrollments.child_id").
+		Where("child_enrollments.class_id = ? AND guardianships.user_id = ?", classID, userID).
+		Count(&count).Error
+	return count > 0, err
 }
 
 // ---------- 加入申请 ----------

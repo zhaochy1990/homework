@@ -154,6 +154,11 @@ func (s *Server) acceptGuardianship(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, err)
 		return
 	}
+	// 新监护人自动获得孩子所在班级的成员权限（data-model 规则）。
+	if err := s.classes.AddGuardianToChildClasses(r.Context(), invite.ChildID, u.ID); err != nil {
+		s.internalError(w, r, err)
+		return
+	}
 	httpx.JSON(w, http.StatusOK, toChild(child))
 }
 

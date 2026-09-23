@@ -46,6 +46,8 @@ func (e *env) cleanup() {
 		e.db.Unscoped().Where("id IN ?", e.classIDs).Delete(&model.Class{})
 	}
 	if len(e.childIDs) > 0 {
+		e.db.Where("child_id IN ?", e.childIDs).Delete(&model.TodoTick{})
+		e.db.Where("child_id IN ?", e.childIDs).Delete(&model.Checkin{})
 		e.db.Where("child_id IN ?", e.childIDs).Delete(&model.Guardianship{})
 		e.db.Where("child_id IN ?", e.childIDs).Delete(&model.ChildEnrollment{})
 		e.db.Unscoped().Where("id IN ?", e.childIDs).Delete(&model.Child{})

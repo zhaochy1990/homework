@@ -102,6 +102,11 @@ func New(cfg *config.Config, db *gorm.DB, opts ...Option) (http.Handler, error) 
 	mux.Handle("DELETE /api/v1/classes/{classId}", protect(s.dissolveClass))
 	mux.Handle("GET /api/v1/classes/{classId}/invite-qrcode", protect(s.inviteQRCode))
 
+	// 孩子入班与权限联动（T05，api-contract §3.3）。
+	mux.Handle("POST /api/v1/children/{childId}/enrollments", protect(s.createEnrollment))
+	mux.Handle("DELETE /api/v1/children/{childId}/enrollments/{classId}", protect(s.deleteEnrollment))
+	mux.Handle("GET /api/v1/classes/{classId}/children", protect(s.listClassChildren))
+
 	// 媒体直传（T07，api-contract §3.5）。
 	mux.Handle("POST /api/v1/media/upload-tickets", protect(s.createUploadTicket))
 	mux.Handle("POST /api/v1/media/upload-tickets/{uploadId}/confirm", protect(s.confirmUploadTicket))
