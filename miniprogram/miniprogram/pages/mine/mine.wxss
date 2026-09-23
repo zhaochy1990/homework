@@ -1,0 +1,15 @@
+.retry {
+  display: inline-block;
+  width: auto;
+  margin-top: 24rpx;
+  padding: 14rpx 44rpx;
+}
+
+.name {
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.status {
+  margin-top: 8rpx;
+}

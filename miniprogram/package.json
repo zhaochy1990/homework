@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
+    "typecheck": "tsc --noEmit",
+    "selfcheck": "node --no-warnings scripts/selfcheck.ts"
   },
   "keywords": [],
   "author": "",

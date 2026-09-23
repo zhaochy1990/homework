@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "subject-card": "/components/subject-card/subject-card"
+  },
+  "navigationBarTitleText": "今日"
+}

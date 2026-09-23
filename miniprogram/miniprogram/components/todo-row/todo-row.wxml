@@ -1,0 +1,4 @@
+<view class="todo {{done ? 'on' : ''}} {{frozen ? 'frozen' : ''}}" bindtap="onTap">
+  <view class="box"></view>
+  <text class="tt">{{content}}</text>
+</view>

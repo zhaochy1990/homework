@@ -1,10 +1,87 @@
-/**app.wxss**/
-.container {
-  height: 100%;
+/**
+ * 全局扁平化设计 token（ia.md §4）：通栏、发丝线、直角按钮、微信绿主色。
+ * 自定义属性定义在 page 上，组件通过继承拿到（组件样式隔离不影响 CSS 变量继承）。
+ */
+page {
+  --color-primary: #07c160;
+  --color-primary-ink: #ffffff;
+  --color-danger: #fa5151;
+  --color-warn-bg: #fdf6e9;
+  --color-warn-border: #f0e3c4;
+  --color-warn-ink: #8a6d1e;
+  --color-bg: #ffffff;
+  --color-fill: #f2f3f5;
+  --color-line: #ececec;
+  --color-ink: #111111;
+  --color-ink-2: #333333;
+  --color-sub: #8a8a8a;
+  --color-disabled: #999999;
+  --hairline: 1px;
+  --radius-media: 8rpx;
+
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-size: 28rpx;
+  line-height: 1.5;
+}
+
+/* ---- 基础元件 ---- */
+.card {
+  background: var(--color-bg);
+  padding: 26rpx 32rpx;
+  border-bottom: var(--hairline) solid var(--color-line);
+}
+
+.rowline {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: 200rpx 0;
-  box-sizing: border-box;
-} 
+}
+
+.sub {
+  color: var(--color-sub);
+  font-size: 25rpx;
+}
+
+.note {
+  margin-top: 16rpx;
+  padding: 18rpx 24rpx;
+  background: var(--color-warn-bg);
+  border: var(--hairline) solid var(--color-warn-border);
+  color: var(--color-warn-ink);
+  font-size: 25rpx;
+}
+
+.empty {
+  padding: 120rpx 32rpx;
+  text-align: center;
+  color: var(--color-sub);
+  font-size: 26rpx;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 22rpx;
+  border: none;
+  border-radius: 0;
+  background: var(--color-primary);
+  color: var(--color-primary-ink);
+  font-size: 30rpx;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.btn::after {
+  border: none;
+}
+
+.btn.ghost {
+  background: var(--color-fill);
+  color: var(--color-ink-2);
+}
+
+.btn.disabled {
+  opacity: 0.4;
+}

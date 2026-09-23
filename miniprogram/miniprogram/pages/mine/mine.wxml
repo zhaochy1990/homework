@@ -1,0 +1,16 @@
+<view class="page">
+  <view class="empty" wx:if="{{loading && !me}}">登录中…</view>
+
+  <view class="empty" wx:elif="{{error}}">
+    <view>{{error}}</view>
+    <button class="btn ghost retry" bindtap="retry">重试</button>
+  </view>
+
+  <view class="card" wx:elif="{{me}}">
+    <view class="rowline">
+      <text class="name">{{me.nickname || '微信用户'}}</text>
+      <text class="sub">ID {{me.id}}</text>
+    </view>
+    <view class="sub status">已通过 STRIDE 登录</view>
+  </view>
+</view>

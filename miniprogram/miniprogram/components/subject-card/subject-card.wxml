@@ -1,0 +1,26 @@
+<view class="card">
+  <view class="rowline head">
+    <view class="head-left">
+      <text class="subject">{{subject}}</text>
+      <text wx:if="{{checkedIn}}" class="badge">已打卡</text>
+    </view>
+    <text wx:if="{{estimatedMinutes > 0}}" class="sub">≈{{estimatedMinutes}} 分钟</text>
+  </view>
+
+  <todo-row
+    wx:for="{{todos}}"
+    wx:key="id"
+    content="{{item.content}}"
+    done="{{item.done}}"
+    frozen="{{checkedIn}}"
+    data-id="{{item.id}}"
+    bind:toggle="onToggle"
+  />
+
+  <view wx:if="{{notes}}" class="note">老师还提到：{{notes}}</view>
+
+  <view class="rowline foot">
+    <text class="sub">{{checkedIn ? '勾选已冻结' : checkedCount + ' / ' + total}}</text>
+    <button wx:if="{{!checkedIn}}" class="btn {{allTicked ? '' : 'disabled'}}" disabled="{{!allTicked}}" bindtap="onCheckin">打卡</button>
+  </view>
+</view>

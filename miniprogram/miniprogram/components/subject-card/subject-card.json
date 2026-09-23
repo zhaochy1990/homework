@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "todo-row": "/components/todo-row/todo-row"
+  }
+}

@@ -1,0 +1,47 @@
+.todo {
+  display: flex;
+  align-items: flex-start;
+  padding: 16rpx 4rpx;
+  font-size: 28rpx;
+}
+
+.todo.frozen {
+  opacity: 0.55;
+}
+
+.box {
+  width: 38rpx;
+  height: 38rpx;
+  border-radius: 50%;
+  border: 3rpx solid #c9c9c9;
+  flex: none;
+  margin-top: 2rpx;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.todo.on .box {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.todo.on .box::after {
+  content: '';
+  position: absolute;
+  left: 11rpx;
+  top: 5rpx;
+  width: 8rpx;
+  height: 16rpx;
+  border: solid #ffffff;
+  border-width: 0 3rpx 3rpx 0;
+  transform: rotate(43deg);
+}
+
+.tt {
+  flex: 1;
+}
+
+.todo.on .tt {
+  color: var(--color-sub);
+  text-decoration: line-through;
+}

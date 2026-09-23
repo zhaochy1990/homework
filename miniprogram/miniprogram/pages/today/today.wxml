@@ -1,0 +1,12 @@
+<view class="page">
+  <view class="preview-hint sub">组件预览 · T16 接入真实数据</view>
+  <subject-card
+    subject="{{demo.subject}}"
+    estimated-minutes="{{demo.estimatedMinutes}}"
+    todos="{{demo.todos}}"
+    notes="{{demo.notes}}"
+    checked-in="{{demo.checkedIn}}"
+    bind:toggle="onToggle"
+    bind:checkin="onCheckin"
+  />
+</view>

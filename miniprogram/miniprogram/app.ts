@@ -1,18 +1,11 @@
-// app.ts
+import { ensureAccessToken } from './api/auth'
+
 App<IAppOption>({
   globalData: {},
   onLaunch() {
-    // 展示本地存储能力
-    const logs = wx.getStorageSync('logs') || []
-    logs.unshift(Date.now())
-    wx.setStorageSync('logs', logs)
-
-    // 登录
-    wx.login({
-      success: res => {
-        console.log(res.code)
-        // 发送 res.code 到后台换取 openId, sessionKey, unionId
-      },
+    // 静默登录：失败不阻塞启动，各页面按需重试（「我的」页有失败态）。
+    ensureAccessToken().catch((err) => {
+      console.warn('[auth] 静默登录失败', err)
     })
   },
 })
