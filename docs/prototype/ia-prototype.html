@@ -312,19 +312,17 @@ aside.panel{width:330px;flex:none;position:sticky;top:24px}
     <section>
       <h2>已定（按你的反应）</h2>
       <ul>
-        <li><b>成长是一级 Tab</b>——打卡日历 / 连续天数 / 卡片墙放「成长」。</li>
-        <li><b>班级收进「我的」</b>——三 Tab：今日 / 成长 / 我的（变体 D）。</li>
+        <li><b>成长是一级 Tab</b>——打卡日历（周视图可展开整月、科目符号标记）/ 朋友圈式打卡动态 / 卡片墙。</li>
+        <li><b>资料库是一级 Tab</b>——学习时高频使用；班级详情里保留资料页签。</li>
+        <li><b>班级收进「我的」</b>——发作业、成员、教材在班级详情里。</li>
         <li>待办行不显示条目级时长，只保留分科合计。</li>
+        <li>全局扁平化：通栏无边框，发丝线分隔。</li>
       </ul>
     </section>
 
     <section>
-      <h2>还剩三个确认</h2>
-      <ol>
-        <li><b>资料入口深度</b>：D 里看资料要走 我的 → 班级 → 资料 → 单元（三层）。可接受？还是要给捷径（比如今日页底部放"最新资料"两三条）？</li>
-        <li><b>今日页密度</b>：D 沿用 B 的摘要式（顶部一张"最长连续 ×N"卡，点了去成长），还是想要 A 的每科 streak 徽章？</li>
-        <li><b>定稿</b>：三条流程在 D 里再走一遍，顺了我就把结论落进 docs/design/ia.md 关闭本 ticket。</li>
-      </ol>
+      <h2>定稿确认</h2>
+      <p style="font-size:13px">D 变体按七轮反馈收敛完毕。把三条验收流程再走一遍，确认后我把结论落进 <code>docs/design/ia.md</code>、修订相关规格（打卡多附件、日历按科目状态）并关闭本 ticket。</p>
     </section>
 
     <div class="statusline" id="statusline"></div>
@@ -419,9 +417,9 @@ const VARIANTS = {
   C:{ name:'C · 三 Tab', sub:'最简', tabs:['todayC','classList','me'],
       claim:'v1 砍到三个 Tab；资料进班级、成长从今日页右上角和"我的"进。信息密度最低，入口最深。',
       routes:'<b>发作业</b>：班级 → 一年二班 → 发作业<br><b>打卡</b>：今日（卡片内联 streak，右上角日历）<br><b>资料</b>：班级 → 资料 → 单元<br><b>日历</b>：今日右上角 / 我的 → 成长' },
-  D:{ name:'D · 三 Tab（B 改）', sub:'今日 / 成长 / 我的 · 班级入我的', tabs:['todayB','growth','me'],
-      claim:'B 的结构 + 班级收进「我的」：日常只面对今日与成长两件事；班级是低频管理动作（发作业、资料、成员），降为「我的」里的入口。',
-      routes:'<b>发作业</b>：我的 → 一年二班 → 发作业<br><b>打卡</b>：今日<br><b>资料</b>：我的 → 一年二班 → 资料 → 单元<br><b>日历</b>：成长 Tab（一级）' },
+  D:{ name:'D · 四 Tab（定稿方向）', sub:'今日 / 成长 / 资料库 / 我的', tabs:['todayB','growth','library','me'],
+      claim:'日常三件事各就各位：今日管做作业与打卡，成长管习惯与回看，资料库因学习时高频使用升为一级入口；班级管理（发作业、成员、教材）收进「我的」。',
+      routes:'<b>发作业</b>：我的 → 一年二班 → 发作业<br><b>打卡</b>：今日<br><b>资料</b>：资料库 Tab → 选班级 → 选教材 → 单元（班级详情里保留资料页签，管理员顺手传）<br><b>日历</b>：成长 Tab（一级）' },
 };
 
 const state = {
@@ -633,7 +631,7 @@ PAGES.growth = function(){
   <div class="body">
     ${childChips()}
     <div class="card">
-      <div class="rowline"><h3>打卡日历 · 9月</h3><span class="sub">${child().name} · 全科目</span></div>
+      <div class="rowline"><h3>打卡日历 · 9月</h3></div>
       ${calendarGrid(!state.calOpen)}
       <button class="calarrow ${state.calOpen?'open':''}" onclick="toggleCal()" aria-label="展开或收起整月">▼</button>
       ${state.calOpen?CAL_LEGEND:''}
