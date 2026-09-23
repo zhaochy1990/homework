@@ -21,7 +21,6 @@ var (
 	ErrClassNotEmpty     = errors.New("class: 班级仍有孩子在班")
 	ErrAlreadyExists     = errors.New("class: 已是成员或已有待审批申请")
 	ErrAlreadyDecided    = errors.New("class: 申请已处理")
-	ErrInviteCode        = errors.New("class: 邀请码无效")
 )
 
 const (
@@ -257,13 +256,6 @@ func (s *Store) MyChildrenInClass(ctx context.Context, classID, userID uint64) (
 		Order("children.id").
 		Find(&children).Error
 	return children, err
-}
-
-func (s *Store) ChildCountInClass(ctx context.Context, classID uint64) (int64, error) {
-	var count int64
-	err := s.db.WithContext(ctx).Model(&model.ChildEnrollment{}).
-		Where("class_id = ?", classID).Count(&count).Error
-	return count, err
 }
 
 // HasChildrenInClass 判断该用户是否有孩子在本班（决定成员能否被踢/退）。
