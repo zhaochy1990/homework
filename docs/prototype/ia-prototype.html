@@ -387,11 +387,11 @@ const D = {
   ],
   parseNotes:'明天穿校服，带水彩笔',
   checkins:[
-    {date:'9月22日 周二', subject:'语文', video:'00:42'},
-    {date:'9月22日 周二', subject:'数学', video:null},
-    {date:'9月21日 周一', subject:'语文', video:'01:15'},
-    {date:'9月20日 周日', subject:'英语', video:'00:38'},
-    {date:'9月19日 周六', subject:'语文', video:null},
+    {date:'9月22日 周二', subject:'语文', text:'今天主动把背诵打卡完了，还教我读了课文～', media:[['photo'],['photo'],['video','00:42']]},
+    {date:'9月22日 周二', subject:'数学', text:'', media:[]},
+    {date:'9月21日 周一', subject:'语文', text:'口算全对，值得表扬', media:[['video','01:15'],['photo']]},
+    {date:'9月20日 周日', subject:'英语', text:'', media:[['video','00:38']]},
+    {date:'9月19日 周六', subject:'语文', text:'周末补卡的朗读', media:[['photo'],['photo'],['photo'],['photo']]},
   ],
 };
 
@@ -644,18 +644,23 @@ PAGES.growth = function(){
       }).join('')}
     </div>
     <div class="card">
-      <div class="rowline"><h3>打卡记录</h3><span class="sub">视频与卡片都在这里回看</span></div>
-      ${D.checkins.map(k=>`
-        <div class="rowline" style="padding:8px 0;border-bottom:1px solid var(--pline)"
-             onclick="${k.video?`openViewer(['video','打卡视频 · ${k.subject}','${k.video}'])`:`toast('该次打卡无视频 · 打卡卡片 ›')`}" role="button">
-          <div style="display:flex;align-items:center;gap:10px">
-            ${k.video
-              ? `<div style="position:relative;width:56px;height:38px;border-radius:7px;overflow:hidden" class="mockimg"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;text-shadow:0 0 4px rgba(0,0,0,.6)">▶ ${k.video}</span></div>`
-              : `<div class="mockimg" style="width:56px;height:38px;border-radius:7px;font-size:11px">无视频</div>`}
-            <span style="font-size:14px">${k.date} · ${k.subject}</span>
+      <div class="rowline"><h3>打卡动态</h3><span class="sub">仅监护人可见</span></div>
+      ${D.checkins.map(k=>{
+        const ch=D.children.find(x=>x.id===state.child);
+        const tiles=k.media.map(m=>m[0]==='video'
+          ? `<div style="position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden" class="mockimg" onclick="openViewer(['video','打卡视频 · ${k.subject}','${m[1]}'])"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;text-shadow:0 0 4px rgba(0,0,0,.6)">▶ ${m[1]}</span></div>`
+          : `<div class="mockimg" style="aspect-ratio:1;border-radius:6px;font-size:11px" onclick="openViewer(['photo','打卡照片 · ${k.subject}'])">照片</div>`).join('');
+        return `<div style="display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--pline)">
+          <div class="avatar" style="background:${ch.color}">${ch.name[0]}</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:6px"><b style="font-size:14px">${ch.name}</b><span class="chip">${k.subject}</span></div>
+            <div class="sub" style="margin-top:1px">${k.date}</div>
+            ${k.text?`<div style="font-size:13.5px;margin:6px 0 2px">${k.text}</div>`:''}
+            ${k.media.length?`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;max-width:240px;margin-top:7px">${tiles}</div>`:''}
+            <div style="margin-top:8px"><span class="sub" style="color:var(--pa)" onclick="toast('该次打卡的海报 · 预签名 URL')" role="button">打卡卡片 ›</span></div>
           </div>
-          <span class="sub">已打卡 ✓ ›</span>
-        </div>`).join('')}
+        </div>`;
+      }).join('')}
     </div>
     <div class="card">
       <div class="rowline"><h3>打卡卡片</h3><span class="sub">最近 30 天</span></div>
@@ -1058,9 +1063,13 @@ function openCheckin(cid,subj){
   const ov=document.createElement('div'); ov.id='sheet'; ov.className='sheetmask';
   ov.innerHTML=`<div class="sheet">
     <h3>打卡 · ${c.name} · ${subj}</h3>
-    <div class="sub" style="text-align:center;margin-top:4px">今天完成的是「${subj}」作业</div>
-    <button class="btn ghost" style="margin-top:16px" onclick="toast('选视频 → STS 直传 → confirm → 携 videoUploadId 打卡（媒体链路线框略）')">＋ 添加打卡视频（可选）</button>
-    <button class="btn" style="margin-top:8px" onclick="doCheckin('${cid}','${subj}')">跳过视频，直接打卡</button>
+    <div class="sub" style="text-align:center;margin-top:4px">可附上今天的照片 / 视频（可选，最多 9 个）</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px">
+      <div class="mockimg" style="aspect-ratio:1;border-radius:8px;font-size:11px" onclick="openViewer(['photo','打卡照片 · ${subj}'])">照片</div>
+      <div style="position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden" class="mockimg" onclick="openViewer(['video','打卡视频 · ${subj}','00:42'])"><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;text-shadow:0 0 4px rgba(0,0,0,.6)">▶ 00:42</span></div>
+      <div class="dashbox" style="margin:0;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:20px" onclick="toast('wx.chooseMedia：照片/视频多选（合计≤9）')">＋</div>
+    </div>
+    <button class="btn" style="margin-top:16px" onclick="doCheckin('${cid}','${subj}')">打卡</button>
     <button class="btn ghost" style="margin-top:8px;background:none;border:none;color:#999" onclick="closeSheet()">再想想</button>
   </div>`;
   scr.appendChild(ov);
