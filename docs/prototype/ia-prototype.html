@@ -521,7 +521,7 @@ function sessionCards(mode){
       const on=state.ticked[tickKey(cid,s.subject,i)];
       h+=`<div class="todo ${on?'on':''} ${done?'frozen':''}" onclick="tick('${cid}','${s.subject}',${i})">
         <span class="box"></span>
-        <span class="tt" style="flex:1">${t[0]}${t[1]?` <span class="sub">≈${t[1]}分钟</span>`:''}</span>
+        <span class="tt" style="flex:1">${t[0]}</span>
       </div>`;
     });
     if(mode==='full' && s.notes)
