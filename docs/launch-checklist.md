@@ -7,6 +7,18 @@
 复制到仓库根目录 `.env`，边做边填。`[固定]` 的已填好，其余待填。
 
 ```dotenv
+# 后端服务
+ENV=dev
+HTTP_ADDR=:8080
+
+# MySQL（本地开发 docker compose up -d mysql；生产填实际库）
+DB_HOST=127.0.0.1
+DB_PORT=3309
+DB_USER=homework
+DB_PASSWORD=homework
+DB_NAME=homework
+DB_ROOT_PASSWORD=root
+
 # 腾讯云 COS
 COS_BUCKET=               # 完整桶名，形如 homework-1250000000
 COS_REGION=               # 例 ap-guangzhou
