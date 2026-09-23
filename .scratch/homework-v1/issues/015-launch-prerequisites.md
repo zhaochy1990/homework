@@ -3,7 +3,7 @@ id: 015
 title: "Task: 上线前置资质与配置清单（HITL）"
 labels: [wayfinder:task]
 status: open
-assignee:
+assignee: pi
 blocked-by: []
 ---
 
@@ -17,3 +17,10 @@ blocked-by: []
 4. STRIDE auth-service：为作业小程序注册 application（见 research/001 的结论）与微信凭证。
 
 产出：wizard 式 checklist 交给用户逐项执行，完成情况记录在 Resolution（含最终域名、桶名、region 等后续 ticket 依赖的事实）。
+
+## Progress
+
+- 清单已产出：`docs/launch-checklist.md`（含 `.env` 模板，值填仓库根 `.env`，已在 `.gitignore`）。用 markdown 而非 bash wizard——一次性上线配置，交互脚本属过度工程；先前的 `scripts/launch-prerequisites.sh` 已删。
+- 腾讯云简化为**一个子账号 + 预设策略 `QcloudCOSFullAccess`**：后端调 STS `GetFederationToken` 时用 session policy 把上传临时密钥收口到 `uploads/*`，控制台不建角色、不写自定义策略。
+- 已固定的值：`WECHAT_APPID=wx5bdb4b2269d80ce7`（`miniprogram/project.config.json`）、`DEEPSEEK_BASE_URL=https://api.deepseek.com`、`DEEPSEEK_MODEL=deepseek-flash`、`AUTH_JWT_ISSUER=auth-service`、`COS_DOMAIN` 由桶名+region 推导。
+- 待用户执行后回填：`API_DOMAIN`、`COS_BUCKET`/`COS_REGION`/`COS_APPID`、CAM 密钥、`WECHAT_APPSECRET`、`WX_MSGPUSH_TOKEN`/`WX_MSGPUSH_AESKEY`、`DEEPSEEK_API_KEY`、`AUTH_SERVICE_BASE_URL`/`AUTH_CLIENT_ID`/`AUTH_CLIENT_SECRET`。
