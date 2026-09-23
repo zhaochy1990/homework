@@ -1,0 +1,7 @@
+.page {
+  padding-bottom: 24rpx;
+}
+
+.li-title {
+  font-size: 28rpx;
+}

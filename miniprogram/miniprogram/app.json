@@ -3,6 +3,8 @@
     "pages/today/today",
     "pages/growth/growth",
     "pages/library/library",
+    "pages/library/units",
+    "pages/library/materials",
     "pages/mine/mine",
     "pages/class/create",
     "pages/class/detail",

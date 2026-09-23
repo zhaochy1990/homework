@@ -1,0 +1,19 @@
+<view class="page">
+  <block wx:if="{{textbook}}">
+    <view
+      wx:for="{{textbook.units}}"
+      wx:key="id"
+      class="card"
+      data-id="{{item.id}}"
+      data-name="{{item.name}}"
+      bindtap="openUnit"
+    >
+      <view class="rowline">
+        <view class="li-title">{{item.name}}</view>
+        <text class="sub">›</text>
+      </view>
+    </view>
+    <view wx:if="{{!textbook.units.length}}" class="empty">这本教材还没有单元</view>
+  </block>
+  <view wx:elif="{{!loading}}" class="empty">该科目还没有选用教材</view>
+</view>

@@ -1,1 +1,41 @@
-/* 资料库样式待 T18 补充。 */
+.page {
+  padding-bottom: 24rpx;
+}
+
+.classbar {
+  white-space: nowrap;
+  padding: 18rpx 32rpx 6rpx;
+}
+
+.chip {
+  display: inline-block;
+  margin-right: 16rpx;
+  padding: 8rpx 24rpx;
+  border: var(--hairline) solid var(--color-line);
+  background: var(--color-fill);
+  color: var(--color-ink-2);
+  font-size: 26rpx;
+}
+
+.chip.on {
+  border-color: #beebd3;
+  background: #e8f8ef;
+  color: var(--color-primary);
+}
+
+.li-title {
+  font-size: 28rpx;
+}
+
+.link {
+  color: var(--color-primary);
+  font-size: 28rpx;
+}
+
+.action {
+  margin-top: 24rpx;
+}
+
+.guidance {
+  padding: 40rpx 32rpx;
+}

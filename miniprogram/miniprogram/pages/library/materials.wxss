@@ -1,0 +1,66 @@
+.page {
+  padding-bottom: 24rpx;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.thumb {
+  width: 76rpx;
+  height: 76rpx;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-fill);
+  border-radius: var(--radius-media);
+  color: var(--color-ink-2);
+  font-size: 30rpx;
+}
+
+.li-title {
+  font-size: 28rpx;
+}
+
+.viewer-mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.viewer-panel {
+  width: 86%;
+  max-height: 80%;
+  padding: 28rpx;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+.viewer-title {
+  margin-bottom: 18rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.viewer-body {
+  max-height: 60vh;
+  font-size: 28rpx;
+  line-height: 1.6;
+}
+
+.viewer-video {
+  width: 100%;
+  height: 420rpx;
+  background: #000000;
+}

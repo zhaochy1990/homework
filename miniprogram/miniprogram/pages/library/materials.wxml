@@ -1,0 +1,40 @@
+<view class="page">
+  <view wx:if="{{!loading && !items.length}}" class="empty">本单元还没有资料</view>
+
+  <view
+    wx:for="{{items}}"
+    wx:key="id"
+    class="card"
+    data-id="{{item.id}}"
+    bindtap="open"
+  >
+    <view class="rowline">
+      <view class="left">
+        <view class="thumb">{{item.type === 'video' ? '▶' : item.type === 'image' ? '▣' : '≡'}}</view>
+        <view>
+          <view class="li-title">{{item.title || '未命名资料'}}</view>
+          <view class="sub">{{item.type === 'video' ? '视频' : item.type === 'image' ? '图片' : '文本'}}</view>
+        </view>
+      </view>
+      <text class="sub">›</text>
+    </view>
+  </view>
+</view>
+
+<view wx:if="{{viewer.visible}}" class="viewer-mask" bindtap="closeViewer">
+  <view class="viewer-panel" catchtap="noop">
+    <view class="viewer-title">{{viewer.title || '资料'}}</view>
+    <scroll-view wx:if="{{viewer.type === 'text'}}" scroll-y class="viewer-body">
+      <text>{{viewer.body}}</text>
+    </scroll-view>
+    <video
+      wx:elif="{{viewer.type === 'video'}}"
+      class="viewer-video"
+      src="{{viewer.url}}"
+      autoplay
+      controls
+      object-fit="contain"
+    />
+    <button class="btn ghost" bindtap="closeViewer">关闭</button>
+  </view>
+</view>

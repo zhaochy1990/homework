@@ -1,1 +1,47 @@
-<view class="empty">资料库 · 班级教材与资料待 T18 接入</view>
+<view class="page">
+  <scroll-view wx:if="{{classes.length}}" class="classbar" scroll-x enable-flex>
+    <view
+      wx:for="{{classes}}"
+      wx:key="id"
+      class="chip {{item.id === classId ? 'on' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="switchClass"
+    >{{item.name}}</view>
+  </scroll-view>
+
+  <view wx:if="{{!classes.length && !loading}}" class="empty">还没有加入任何班级</view>
+
+  <block wx:if="{{classId}}">
+    <block wx:if="{{textbooks.length}}">
+      <view
+        wx:for="{{textbooks}}"
+        wx:key="subject"
+        class="card"
+        data-subject="{{item.subject}}"
+        bindtap="openUnits"
+      >
+        <view class="rowline">
+          <view>
+            <view class="li-title">{{item.subject}} · {{item.textbook.name}}</view>
+            <view class="sub">{{item.textbook.units.length}} 个单元</view>
+          </view>
+          <text class="sub">›</text>
+        </view>
+      </view>
+      <view class="card" bindtap="goSelect">
+        <view class="rowline">
+          <text class="link">＋ 选用其他科目教材</text>
+          <text class="sub">›</text>
+        </view>
+      </view>
+    </block>
+
+    <view wx:elif="{{!loading}}" class="card guidance">
+      <view class="li-title">本班还没选用教材</view>
+      <view class="sub">资料按单元归纳，先为本班选用教材</view>
+      <button class="btn action" bindtap="goSelect">去选择教材</button>
+    </view>
+  </block>
+
+  <view class="note">资料先审后显：检测中/未通过的资料不对成员展示；图片视频走预签名 URL 播放。</view>
+</view>
