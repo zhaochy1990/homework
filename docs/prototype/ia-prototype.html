@@ -1,0 +1,1102 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>作业打卡小程序 IA 原型</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* ============ 工作台（主题自适应） ============ */
+:root{
+  --bg:#EFF1EE; --panel:#FFFFFF; --ink:#1B1D1B; --muted:#6E736E;
+  --line:#DDE0DC; --accent:#07C160; --accent-ink:#FFFFFF;
+  --code-bg:#F4F6F2;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141816; --panel:#1C211E; --ink:#E8EAE7; --muted:#99A09A;
+    --line:#2A302C; --accent:#2FD47A; --accent-ink:#0E2417;
+    --code-bg:#232926;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141816; --panel:#1C211E; --ink:#E8EAE7; --muted:#99A09A;
+  --line:#2A302C; --accent:#2FD47A; --accent-ink:#0E2417;
+  --code-bg:#232926;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:14px; line-height:1.6;
+}
+a{color:var(--accent)}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){ *{transition:none !important;animation:none !important} }
+
+.workbench{
+  display:flex; gap:36px; align-items:flex-start; justify-content:center;
+  max-width:1100px; margin:0 auto; padding:32px 20px 120px;
+}
+aside.panel{width:330px;flex:none;position:sticky;top:24px}
+.panel h1{font-size:19px;font-weight:700;text-wrap:balance;line-height:1.4}
+.panel .kick{font-size:12px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.panel .sub{color:var(--muted);font-size:13px;margin-top:4px}
+.panel section{
+  background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  padding:16px; margin-top:14px;
+}
+.panel h2{font-size:13px;font-weight:700;margin-bottom:8px}
+.panel ol,.panel ul{padding-left:18px}
+.panel li{margin:5px 0;font-size:13px}
+.panel .hint{font-size:12px;color:var(--muted)}
+.panel code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+  background:var(--code-bg); padding:1px 5px; border-radius:4px;
+}
+.vnote{border-left:3px solid var(--accent)}
+.vnote .vname{font-weight:700;font-size:14px}
+.vnote .claim{margin-top:6px;font-size:13px}
+.vnote .route{margin-top:8px;font-size:12.5px;color:var(--muted)}
+.vnote .route b{color:var(--ink);font-weight:500}
+.statusline{
+  margin-top:14px; padding:10px 14px; border-radius:10px;
+  background:var(--code-bg); border:1px dashed var(--line);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; color:var(--muted);
+}
+.statusline b{color:var(--ink);font-weight:500}
+.throwaway{margin-top:14px;font-size:12px;color:var(--muted);text-align:center}
+
+/* ============ 手机（固定浅色，模拟设备屏） ============ */
+.stage{flex:none}
+.phone{
+  width:375px; height:768px; border-radius:46px; padding:11px;
+  background:#111; box-shadow:0 24px 60px rgba(0,0,0,.28);
+  position:relative; flex:none;
+}
+.screen{
+  width:100%; height:100%; border-radius:36px; overflow:hidden; position:relative;
+  background:#F6F6F6; color:#111;
+  font-family:"Noto Sans SC","PingFang SC",sans-serif;
+  --pa:#07C160; --pa-ink:#fff; --warn:#FA5151;
+  --pline:#E8E8E8; --pfill:#F6F6F6; --pcard:#FFFFFF; --psub:#8A8A8A; --pink2:#333;
+}
+.scr{height:100%;display:flex;flex-direction:column}
+.statusbar{
+  height:36px; flex:none; display:flex; justify-content:space-between; align-items:center;
+  padding:0 18px; font-size:12px; font-weight:500; color:#111;
+  font-variant-numeric:tabular-nums;
+}
+.capsule{
+  position:absolute; top:10px; right:12px; width:82px; height:30px; border-radius:15px;
+  background:rgba(0,0,0,.06); display:flex; align-items:center; justify-content:space-around;
+  color:#333; font-size:13px; z-index:5;
+}
+.pagehead{
+  flex:none; height:44px; display:flex; align-items:center; justify-content:center;
+  position:relative; background:var(--pcard); border-bottom:1px solid var(--pline);
+  font-size:16px; font-weight:500;
+}
+.pagehead .back{
+  position:absolute; left:2px; top:0; bottom:0; width:52px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; color:#111; border:none; background:none;
+}
+.pagehead .hact{
+  position:absolute; right:10px; top:0; bottom:0; display:flex; align-items:center;
+  border:none; background:none; color:var(--pa); font-size:13px; font-weight:500;
+}
+.body{flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+
+/* tab bar */
+.tabbar{
+  flex:none; height:56px; display:flex; background:var(--pcard);
+  border-top:1px solid var(--pline); padding-bottom:4px;
+}
+.tabbar .tb{
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2px; border:none; background:none; color:var(--psub); font-size:10.5px;
+}
+.tabbar .tb svg{width:22px;height:22px}
+.tabbar .tb.on{color:var(--pa)}
+
+/* 通用元件 */
+.card{background:var(--pcard);border:1px solid var(--pline);border-radius:10px;padding:12px;margin:10px 12px}
+.card h3{font-size:15px;font-weight:600}
+.rowline{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sub{color:var(--psub);font-size:12.5px}
+.chip{
+  display:inline-flex;align-items:center;gap:3px;padding:2px 9px;border-radius:99px;
+  background:var(--pfill);border:1px solid var(--pline);font-size:11.5px;color:#555;
+}
+.chip.on{background:var(--pa);border-color:var(--pa);color:var(--pa-ink);font-weight:500}
+.chip.warn{border-color:var(--warn);color:var(--warn)}
+.btn{
+  display:block;width:100%;padding:11px;border-radius:10px;border:none;
+  background:var(--pa);color:var(--pa-ink);font-size:15px;font-weight:500;
+}
+.btn.ghost{background:var(--pfill);color:#333;border:1px solid var(--pline)}
+.btn.dis{opacity:.4;pointer-events:none}
+.hr{height:1px;background:var(--pline);margin:10px -12px}
+.avatar{
+  width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;
+  justify-content:center;color:#fff;font-size:14px;font-weight:500;
+}
+.todo{
+  display:flex;align-items:flex-start;gap:9px;padding:8px 2px;font-size:14px;
+}
+.todo .box{
+  width:19px;height:19px;border-radius:50%;border:1.6px solid #C9C9C9;flex:none;
+  margin-top:1px;position:relative;
+}
+.todo.on .box{background:var(--pa);border-color:var(--pa)}
+.todo.on .box::after{
+  content:"";position:absolute;left:5.5px;top:2.5px;width:4px;height:8px;
+  border:solid #fff;border-width:0 1.8px 1.8px 0;transform:rotate(43deg);
+}
+.todo.on .tt{color:var(--psub);text-decoration:line-through}
+.todo.frozen{opacity:.55}
+.badge{
+  font-size:10.5px;padding:1px 7px;border-radius:5px;font-weight:500;flex:none;
+}
+.badge.new{background:#E8F8EF;color:var(--pa);border:1px solid #BEEBD3}
+.badge.append{background:#FFF4E3;color:#C87D0D;border:1px solid #F5DDAE}
+.dashbox{
+  border:1.5px dashed #C9C9C9;border-radius:10px;padding:16px;text-align:center;
+  color:var(--psub);font-size:13px;background:var(--pcard);margin:10px 12px;
+}
+.note{
+  margin:8px 12px;padding:9px 12px;border-radius:8px;background:#FDF6E9;
+  border:1px solid #F0E3C4;font-size:12.5px;color:#8A6D1E;
+}
+.mockimg{
+  background:repeating-linear-gradient(45deg,#EFEFEF 0 10px,#E7E7E7 10px 20px);
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  color:#9A9A9A;font-size:12px;
+}
+.playbtn{
+  width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,.55);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;
+}
+.empty{padding:34px 16px;text-align:center;color:var(--psub);font-size:13px}
+
+/* 打卡卡片海报 */
+.poster{
+  margin:14px auto;width:250px;aspect-ratio:3/4;background:#fff;border-radius:12px;
+  border:1px solid var(--pline);padding:20px 18px;display:flex;flex-direction:column;
+  text-align:center;
+}
+.poster .pchild{font-size:20px;font-weight:700;margin-top:14px}
+.poster .pdate{font-size:12px;color:var(--psub);margin-top:2px}
+.poster .pnum{font-size:44px;font-weight:700;color:var(--pa);margin:16px 0 0;font-variant-numeric:tabular-nums}
+.poster .plabel{font-size:11px;color:var(--psub);letter-spacing:.2em;margin-top:2px}
+.poster .plist{margin-top:16px;text-align:left;font-size:12.5px;line-height:2}
+.poster .pfoot{margin-top:auto;font-size:10px;color:#BBB;letter-spacing:.3em}
+.poster .pband{height:5px;border-radius:3px;background:var(--pa);margin:0 30px}
+
+/* 底部弹层 / 全屏查看器 */
+.sheetmask{
+  position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:30;
+  display:flex;align-items:flex-end;
+}
+.sheet{
+  width:100%;background:var(--pcard);border-radius:16px 16px 0 0;padding:18px 16px 30px;
+}
+.sheet h3{font-size:16px;font-weight:600;text-align:center}
+.sheet .btn{margin-top:10px}
+.viewer{
+  position:absolute;inset:0;background:#000;z-index:40;color:#fff;
+  display:flex;flex-direction:column;
+}
+.viewer .vhead{padding:44px 16px 10px;display:flex;justify-content:space-between;align-items:center}
+.viewer .vbody{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+.viewer .vctrl{padding:14px 16px 30px;font-size:12px;color:#B5B5B5}
+.viewer input[type=range]{width:100%;accent-color:var(--pa)}
+.vlabel{font-size:12px;color:#9A9A9A}
+
+/* toast */
+.toast{
+  position:absolute;left:50%;bottom:110px;transform:translateX(-50%);
+  background:rgba(0,0,0,.75);color:#fff;font-size:13px;padding:9px 16px;
+  border-radius:8px;z-index:60;max-width:300px;text-align:center;
+  animation:tfade 2.4s forwards;pointer-events:none;
+}
+@keyframes tfade{0%{opacity:0}8%{opacity:1}80%{opacity:1}100%{opacity:0}}
+
+/* 日历 */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px}
+.cal .wd{text-align:center;font-size:11px;color:var(--psub);padding:2px 0}
+.cal .d{
+  aspect-ratio:1;border-radius:8px;background:var(--pfill);font-size:12px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  font-variant-numeric:tabular-nums;
+}
+.cal .d .st{font-size:9px}
+.cal .d.ok{background:#E5F8EE;color:var(--pa)}
+.cal .d.miss{background:#FDEBEB;color:var(--warn)}
+.cal .d.rest{background:var(--pcard);color:#C3C3C3;border:1px solid var(--pline)}
+.cal .d.nhw{background:#FFF4E3;color:#C87D0D}
+.cal .d.today{outline:2px solid var(--pa);outline-offset:-2px}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;font-size:11px;color:var(--psub)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:3px;vertical-align:-1px}
+
+/* 变体切换条 */
+.switcher{
+  position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:90;
+  display:flex;align-items:center;gap:4px;background:#111;color:#fff;
+  border-radius:99px;padding:6px 10px;box-shadow:0 8px 26px rgba(0,0,0,.35);
+  font-size:13px;
+}
+.switcher button{
+  border:none;background:rgba(255,255,255,.14);color:#fff;width:30px;height:30px;
+  border-radius:50%;font-size:14px;
+}
+.switcher button:hover{background:rgba(255,255,255,.3)}
+.switcher .vlab{min-width:196px;text-align:center;font-weight:500}
+.switcher .vlab small{display:block;font-weight:400;font-size:10.5px;color:#9A9A9A}
+
+@media (max-width:960px){
+  .workbench{flex-direction:column;align-items:center;padding:20px 14px 130px}
+  aside.panel{width:100%;max-width:430px;position:static}
+  .phone{height:700px}
+}
+@media (max-width:420px){
+  .phone{width:100%;border-radius:34px;padding:7px}
+  .screen{border-radius:28px}
+}
+</style>
+</head>
+<body>
+
+<div class="workbench">
+  <aside class="panel">
+    <div class="kick">Wayfinder · Ticket 013</div>
+    <h1>作业打卡小程序 v1<br>信息架构原型</h1>
+    <p class="sub">三个结构性不同的 IA 变体，同一个手机里切换。对着<b>结构</b>反应，别管美观——这是线框。</p>
+
+    <section>
+      <h2>怎么用</h2>
+      <ul>
+        <li>手机里的灰色元素大多可以点：勾选、打卡、切 Tab、进班级、看资料。</li>
+        <li>底部黑条或键盘 <code>←</code> <code>→</code> 切换 A / B / C 三个变体。</li>
+        <li>每个变体里把三条验收流程各走一遍（右侧清单），感受入口深浅。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>三条验收流程</h2>
+      <ol>
+        <li><b>发作业</b>（管理员）：进班级 → 一年二班 → 发作业 → 粘贴原文 → 解析 → 确认页（分科分组、追加标记、"老师还提到"）→ 入库</li>
+        <li><b>今日打卡</b>：今日 → 勾完某科全部待办 → 打卡 →（可选视频）→ 打卡卡片</li>
+        <li><b>按单元看资料</b>：进到教材单元 → 播视频 / 看图 / 读文字</li>
+      </ol>
+    </section>
+
+    <section class="vnote" id="vnote"><!-- 变体主张，JS 注入 --></section>
+
+    <section>
+      <h2>要你回答的四个问题</h2>
+      <ol>
+        <li><b>资料库放哪？</b> A：一级 Tab ｜ B/C：收进班级</li>
+        <li><b>成长（打卡日历 / 连续天数 / 卡片墙）放哪？</b> B：一级 Tab ｜ A/C：今日页内联 + 二级入口</li>
+        <li><b>Tab 数量</b>：四个（A / B）还是三个（C）？</li>
+        <li><b>今日页密度</b>：A 全展开（每科徽章）｜ B 摘要式 ｜ C 折中（内联 streak）；以及"今日无作业"科目要不要显示一行（切到糖糖看）</li>
+      </ol>
+      <p class="hint">可以混搭——"要 A 的今日页 + B 的成长 Tab"这类答案是合法的。</p>
+    </section>
+
+    <div class="statusline" id="statusline"></div>
+    <p class="throwaway">丢弃式原型 · 只回答 IA 问题 · 结论将写入 docs/design/ia.md</p>
+  </aside>
+
+  <div class="stage">
+    <div class="phone">
+      <div class="screen" id="screen"></div>
+    </div>
+  </div>
+</div>
+
+<div class="switcher" role="toolbar" aria-label="变体切换">
+  <button onclick="cycleVariant(-1)" aria-label="上一个变体">←</button>
+  <div class="vlab" id="vlab"></div>
+  <button onclick="cycleVariant(1)" aria-label="下一个变体">→</button>
+</div>
+
+<script>
+/* ================= mock 数据 ================= */
+const D = {
+  user:{name:'李瑶', tag:'妈妈'},
+  children:[
+    {id:'guoguo', name:'果果', grade:'一年级', color:'#F2B705'},
+    {id:'tangtang', name:'糖糖', grade:'五年级', color:'#9B51E0'},
+  ],
+  classes:[
+    {id:'c1', name:'一年二班', child:'guoguo', role:'管理员', subjects:['语文','数学','英语']},
+    {id:'c2', name:'五年三班', child:'tangtang', role:'成员', subjects:['语文','数学','英语','科学']},
+  ],
+  date:'9月23日 周三',
+  sessions:{
+    guoguo:[
+      {subject:'语文', todos:[['抄写第5课生词三遍',20],['背诵古诗《静夜思》',15]], notes:'明天带一把彩笔', streak:12},
+      {subject:'数学', todos:[['口算天天练 P12',15],['黄冈同步 P23-24，做完对答案',25]], streak:12},
+      {subject:'英语', todos:[['读英语绘本 10 分钟',10]], streak:5},
+    ],
+    tangtang:[
+      {subject:'语文', todos:[['预习第9课，圈出生字',15],['背诵《泊船瓜洲》',15]], streak:30},
+      {subject:'科学', todos:[['观察绿豆发芽并记录',20]], streak:3},
+    ],
+    noHomework:{tangtang:['数学','英语']},
+  },
+  members:['李瑶（我）· 管理员','果果爸爸 · 管理员','糖糖妈妈 · 成员','乐乐妈妈 · 成员','轩轩爸爸 · 成员'],
+  textbooks:{
+    c1:[
+      {subject:'语文', name:'部编版·一年级上册', units:[
+        {name:'第一单元·识字', items:[['text','背诵篇目《金木水火土》'],['image','生字表书写示范']]},
+        {name:'第二单元·汉语拼音', items:[['video','拼音朗读示范 b p m f','08:24'],['image','四线格书写示范']]},
+        {name:'第三单元·汉语拼音', items:[['video','拼音朗读示范 g k h','09:12']]},
+        {name:'第四单元·课文', items:[['video','《秋天》课文朗读','05:36'],['text','背诵篇目《秋天》']]},
+      ]},
+      {subject:'数学', name:'人教版·一年级上册', units:[
+        {name:'1. 数一数', items:[['image','数一数练习图']]},
+        {name:'2. 比多少', items:[['video','比多少·例题讲解','11:02']]},
+        {name:'3. 位置', items:[['text','上下前后左右·口诀']]},
+      ]},
+      {subject:'英语', name:null, units:[]},
+    ],
+    c2:[
+      {subject:'语文', name:'部编版·五年级上册', units:[
+        {name:'第一单元·一花一鸟总关情', items:[['video','《白鹭》朗读示范','04:58'],['text','背诵篇目《白鹭》']]},
+        {name:'第二单元·阅读要有速度', items:[['image','阅读策略导图']]},
+      ]},
+      {subject:'科学', name:null, units:[]},
+    ],
+  },
+  parseText:'今天作业：1.语文抄写第6课生词两遍，背诵《影子》 2.数学口算天天练P13 3.明天穿校服，带水彩笔',
+  parseGroups:[
+    {subject:'语文', target:'new', todos:[['抄写第6课生词两遍',20],['背诵《影子》',15]]},
+    {subject:'数学', target:'append', existTodos:['口算天天练 P12（已勾选）','黄冈同步 P23-24，做完对答案'], todos:[['口算天天练 P13',15]]},
+  ],
+  parseNotes:'明天穿校服，带水彩笔',
+};
+
+/* ================= 状态 ================= */
+const VARIANTS = {
+  A:{ name:'A · 四 Tab', sub:'资料库独立', tabs:['today','classList','library','me'],
+      claim:'资料（老师发的视频/图/文）是家长高频回看的内容，配得上一级 Tab；今日页每科 streak 徽章直读，进度在今日页就能看全。',
+      routes:'<b>发作业</b>：班级 → 一年二班 → 发作业<br><b>打卡</b>：今日（孩子切换 + 分科卡片 + streak 徽章）<br><b>资料</b>：资料库 Tab → 选班级 → 选教材 → 单元<br><b>日历</b>：无独立入口（今日页徽章 + 我的）' },
+  B:{ name:'B · 四 Tab', sub:'成长独立（进度优先）', tabs:['todayB','growth','classList','me'],
+      claim:'产品的北极星是习惯养成——打卡日历 + 连续天数 + 卡片墙该是一级入口；资料收进班级，因为资料本来就是班级的。',
+      routes:'<b>发作业</b>：班级 → 一年二班 → 发作业<br><b>打卡</b>：今日（精简摘要，streak 收进成长）<br><b>资料</b>：班级 → 一年二班 → 资料 → 单元<br><b>日历</b>：成长 Tab（一级）' },
+  C:{ name:'C · 三 Tab', sub:'最简', tabs:['todayC','classList','me'],
+      claim:'v1 砍到三个 Tab；资料进班级、成长从今日页右上角和"我的"进。信息密度最低，入口最深。',
+      routes:'<b>发作业</b>：班级 → 一年二班 → 发作业<br><b>打卡</b>：今日（卡片内联 streak，右上角日历）<br><b>资料</b>：班级 → 资料 → 单元<br><b>日历</b>：今日右上角 / 我的 → 成长' },
+};
+
+const state = {
+  variant:'A',
+  child:'guoguo',
+  ticked:{},          // "child|subject|i" -> true
+  checkedIn:{},       // "child|subject" -> true
+  tabIdx:{A:0,B:0,C:0},
+  stacks:{A:[{id:'today'}],B:[{id:'todayB'}],C:[{id:'todayC'}]},
+  classTab:'hw',      // 班级详情内页签
+  openClass:'c1',
+  libClass:'c1',      // A 资料库的班级选择
+  calSubject:'语文',
+};
+let parseTimer = null;
+
+/* ================= 框架 ================= */
+const $screen = () => document.getElementById('screen');
+
+function go(id, ctx){ state.stacks[state.variant].push({id, ctx:ctx||{}}); render(); }
+function back(){ const s=state.stacks[state.variant]; if(s.length>1){s.pop(); render();} }
+function switchTab(i){
+  const v = VARIANTS[state.variant];
+  state.tabIdx[state.variant] = i;
+  state.stacks[state.variant] = [{id:v.tabs[i]}];
+  render();
+}
+function switchChild(id){ state.child=id; render(); }
+function toast(msg){
+  const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+  $screen().appendChild(t); setTimeout(()=>t.remove(), 2400);
+}
+function setVariant(v){
+  if(!VARIANTS[v]) return;
+  state.variant=v;
+  try{ history.replaceState(null,'','?variant='+v); }catch(e){}
+  render();
+}
+function cycleVariant(dir){
+  const keys=Object.keys(VARIANTS);
+  const i=keys.indexOf(state.variant);
+  setVariant(keys[(i+dir+keys.length)%keys.length]);
+}
+document.addEventListener('keydown',e=>{
+  const tag=(e.target.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='textarea'||e.target.isContentEditable) return;
+  if(e.key==='ArrowLeft') cycleVariant(-1);
+  if(e.key==='ArrowRight') cycleVariant(1);
+});
+
+function child(){ return D.children.find(c=>c.id===state.child); }
+function classOf(cid){ return D.classes.find(c=>c.id===cid); }
+function tickKey(cid,subj,i){ return cid+'|'+subj+'|'+i; }
+function cinKey(cid,subj){ return cid+'|'+subj; }
+
+/* ================= 图标 ================= */
+const ICONS = {
+  today:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v3.5M16 3v3.5"/><path d="M8 14.5l2.4 2.4L15.5 12" stroke-width="2"/></svg>',
+  class:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8.5" cy="9" r="3.2"/><circle cx="16.5" cy="10.5" r="2.4"/><path d="M3.5 19c.6-3 2.6-4.5 5-4.5s4.4 1.5 5 4.5M14.5 18.5c.3-2 1.3-3.2 3-3.2s2.6 1 3 3"/></svg>',
+  lib:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 7.5V19a1 1 0 0 0 1 1h15a1 1 0 0 0 1-1V9.5h-9l-2-2.5h-6a1 1 0 0 0-1 .5z"/><path d="M3.5 7.5V5.5a1 1 0 0 1 1-1h5.5l1.5 2"/></svg>',
+  growth:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-8M21 20H3.5"/><circle cx="16" cy="8" r="2.4"/></svg>',
+  me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.2" r="3.6"/><path d="M4.8 20c.8-3.7 3.4-5.6 7.2-5.6s6.4 1.9 7.2 5.6"/></svg>',
+};
+
+/* ================= 公共渲染件 ================= */
+function tabbar(active){
+  const v=VARIANTS[state.variant];
+  const names={today:'今日作业',todayB:'今日',todayC:'今日',classList:'班级',library:'资料库',growth:'成长',me:'我的'};
+  const icons={today:'today',todayB:'today',todayC:'today',classList:'class',library:'lib',growth:'growth',me:'me'};
+  let h='<nav class="tabbar">';
+  v.tabs.forEach((t,i)=>{
+    h+=`<button class="tb ${i===active?'on':''}" onclick="switchTab(${i})">${ICONS[icons[t]]}<span>${names[t]}</span></button>`;
+  });
+  return h+'</nav>';
+}
+function head(title, opt){
+  opt=opt||{};
+  const stack=state.stacks[state.variant];
+  let left='';
+  if(stack.length>1) left=`<button class="back" onclick="back()" aria-label="返回">‹</button>`;
+  let right='';
+  if(opt.action) right=`<button class="hact" onclick="${opt.action}">${opt.actionText}</button>`;
+  else if(opt.calIcon) right=`<button class="hact" onclick="go('calendar')" aria-label="打卡日历">📅</button>`;
+  return `<div class="pagehead">${left}<span>${title}</span>${right}</div>`;
+}
+function childChips(){
+  let h='<div style="display:flex;gap:8px;margin:10px 12px 0">';
+  D.children.forEach(c=>{
+    h+=`<button class="chip ${state.child===c.id?'on':''}" onclick="switchChild('${c.id}')">${c.name} · ${c.grade}</button>`;
+  });
+  return h+'</div>';
+}
+function subjChips(cur, fn, list){
+  const subs = list || D.classes.map(c=>c.subjects).flat().filter((s,i,a)=>a.indexOf(s)===i);
+  let h='<div style="display:flex;gap:6px;margin:10px 12px 0;flex-wrap:wrap">';
+  subs.forEach(s=>{ h+=`<button class="chip ${cur===s?'on':''}" onclick="${fn}('${s}')">${s}</button>`; });
+  return h+'</div>';
+}
+function streakChip(subj, n){
+  return `<span class="chip" style="gap:4px">${subj} <b style="color:#E8A23D">×${n}</b></span>`;
+}
+
+/* 今日 · 会话卡片（A/B/C 共用骨架，密度由参数控制） */
+function sessionCards(mode){
+  const cid=state.child;
+  const list=D.sessions[cid]||[];
+  const nos=(D.sessions.noHomework[cid]||[]);
+  let h='';
+  list.forEach(s=>{
+    const key=cinKey(cid,s.subject);
+    const done=!!state.checkedIn[key];
+    const allTick=s.todos.every((t,i)=>state.ticked[tickKey(cid,s.subject,i)]);
+    const mins=s.todos.reduce((a,t)=>a+(t[1]||0),0);
+    const tickedN=s.todos.filter((t,i)=>state.ticked[tickKey(cid,s.subject,i)]).length;
+    h+=`<div class="card">
+      <div class="rowline">
+        <div style="display:flex;align-items:center;gap:8px">
+          <h3>${s.subject}</h3>
+          ${done?'<span class="badge new">已打卡</span>':''}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          ${mode==='inline'?`<span class="chip">连续 ×${s.streak+(done?1:0)}</span>`:''}
+          ${mins?`<span class="sub">≈${mins} 分钟</span>`:''}
+        </div>
+      </div>`;
+    s.todos.forEach((t,i)=>{
+      const on=state.ticked[tickKey(cid,s.subject,i)];
+      h+=`<div class="todo ${on?'on':''} ${done?'frozen':''}" onclick="tick('${cid}','${s.subject}',${i})">
+        <span class="box"></span>
+        <span class="tt" style="flex:1">${t[0]}${t[1]?` <span class="sub">≈${t[1]}分钟</span>`:''}</span>
+      </div>`;
+    });
+    if(mode==='full' && s.notes)
+      h+=`<div class="note">老师还提到：${s.notes}</div>`;
+    h+=`<div class="rowline" style="margin-top:8px">
+      <span class="sub">${done?'勾选已冻结':'${tick}/${total}'}</span>
+      ${done?'':`<button class="btn ${allTick?'':'dis'}" style="width:auto;padding:7px 22px;font-size:13.5px" onclick="openCheckin('${cid}','${s.subject}')">打卡</button>`}
+    </div>`;
+    h=h.replace('${tick}',tickedN).replace('${total}',s.todos.length);
+    h+='</div>';
+  });
+  nos.forEach(subj=>{
+    h+=`<div class="card" style="opacity:.62">
+      <div class="rowline"><h3 style="color:#999">${subj}</h3><span class="sub">今日无作业</span></div>
+    </div>`;
+  });
+  return h;
+}
+function tick(cid,subj,i){
+  const key=tickKey(cid,subj,i);
+  if(state.checkedIn[cinKey(cid,subj)]){ toast('已打卡，勾选已冻结（todo_frozen）'); return; }
+  state.ticked[key]=!state.ticked[key];
+  render();
+}
+function totalTicked(cid){
+  let a=0,b=0;
+  (D.sessions[cid]||[]).forEach(s=>{ s.todos.forEach((t,i)=>{ b++; if(state.ticked[tickKey(cid,s.subject,i)])a++; }); });
+  return [a,b];
+}
+
+/* ================= 页面 ================= */
+const PAGES = {};
+
+/* ---- A 今日 ---- */
+PAGES.today = function(){
+  const c=child();
+  const streaks=(D.sessions[c.id]||[]).map(s=>streakChip(s.subject, s.streak+(state.checkedIn[cinKey(c.id,s.subject)]?1:0))).join(' ');
+  const cin=(D.sessions[c.id]||[]).filter(s=>state.checkedIn[cinKey(c.id,s.subject)]).length;
+  return head('今日作业') + `
+  <div class="body">
+    ${childChips()}
+    <div style="padding:10px 12px 0"><span class="sub">${D.date} · 今日 ${D.sessions[c.id].length} 科有作业 · 已打卡 ${cin} 科</span></div>
+    <div style="padding:8px 12px 0;display:flex;gap:6px;flex-wrap:wrap">${streaks}</div>
+    ${sessionCards('full')}
+    <div class="dashbox" onclick="toast('演示边界：无作业日标记在班级页')">今天没有其他作业了 · 标记无作业日 ›</div>
+    <div style="height:12px"></div>
+  </div>` + tabbar(0);
+};
+
+/* ---- B 今日（摘要式） ---- */
+PAGES.todayB = function(){
+  const c=child();
+  const streaks=(D.sessions[c.id]||[]).map(s=>s.streak+(state.checkedIn[cinKey(c.id,s.subject)]?1:0));
+  const max=Math.max(...streaks,0);
+  return head('今日') + `
+  <div class="body">
+    ${childChips()}
+    <div class="card" style="display:flex;align-items:center;gap:12px;margin-top:12px" onclick="switchTab(1)" role="button">
+      <div style="width:46px;height:46px;border-radius:50%;background:#E5F8EE;display:flex;align-items:center;justify-content:center;color:#07C160;font-size:19px;font-weight:700">×${max}</div>
+      <div style="flex:1">
+        <div style="font-weight:600">${c.name}的最长连续打卡（天）</div>
+        <div class="sub">连续天数、打卡日历、卡片墙都在「成长」›</div>
+      </div>
+    </div>
+    ${sessionCards('compact')}
+    <div style="height:12px"></div>
+  </div>` + tabbar(0);
+};
+
+/* ---- C 今日（折中，内联 streak + 右上角日历） ---- */
+PAGES.todayC = function(){
+  const c=child();
+  return head('今日', {calIcon:true}) + `
+  <div class="body">
+    ${childChips()}
+    <div style="padding:10px 12px 0"><span class="sub">${D.date} · 勾完一科的全部待办即可打卡</span></div>
+    ${sessionCards('inline')}
+    <div style="height:12px"></div>
+  </div>` + tabbar(0);
+};
+
+/* ---- B 成长 ---- */
+PAGES.growth = function(){
+  return head('成长') + `
+  <div class="body">
+    ${childChips()}
+    ${subjChips(state.calSubject, 'setCalSubject')}
+    <div class="card">
+      <div class="rowline"><h3>打卡日历 · 9月</h3><span class="sub">${state.calSubject}</span></div>
+      ${calendarGrid(state.calSubject)}
+      <div class="legend">
+        <span><i style="background:#E5F8EE"></i>已打卡</span>
+        <span><i style="background:#FDEBEB"></i>漏卡</span>
+        <span><i style="background:#F6F6F6;border:1px solid #E8E8E8"></i>休息日</span>
+        <span><i style="background:#FFF4E3"></i>无作业日</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:8px">各科连续打卡</h3>
+      ${(D.sessions[state.child]||[]).map(s=>{
+        const n=s.streak+(state.checkedIn[cinKey(state.child,s.subject)]?1:0);
+        return `<div class="rowline" style="padding:5px 0">
+          <span>${s.subject}</span>
+          <span style="display:flex;align-items:center;gap:8px">
+            <span style="width:110px;height:6px;border-radius:3px;background:#F0F0F0;overflow:hidden">
+              <span style="display:block;height:100%;width:${Math.min(n/30*100,100)}%;background:#07C160"></span>
+            </span>
+            <b style="font-variant-numeric:tabular-nums">×${n}</b>
+          </span></div>`;
+      }).join('')}
+    </div>
+    <div class="card">
+      <div class="rowline"><h3>打卡卡片</h3><span class="sub">最近 30 天</span></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        ${[1,2,3].map(i=>`<div class="mockimg" style="width:96px;aspect-ratio:3/4" onclick="toast('卡片历史 · 预签名 URL 加载海报')">海报 ${i}</div>`).join('')}
+      </div>
+    </div>
+    <div style="height:12px"></div>
+  </div>` + tabbar(1);
+};
+function setCalSubject(s){ state.calSubject=s; render(); }
+
+function calendarGrid(subj){
+  const start=2; // 2026-09-01 是周二
+  const days=30;
+  let h='<div class="cal">'+'日一二三四五六'.split('').map(w=>`<span class="wd">${w}</span>`).join('');
+  for(let i=0;i<start;i++) h+='<span></span>';
+  for(let d=1;d<=days;d++){
+    const dow=(start+d-1)%7;
+    let cls='d', st='';
+    if(dow===0||dow===6){ cls+=' rest'; st='休'; }
+    else if(d===11){ cls+=' nhw'; st='无作业'; }
+    else if(d%7===5||d%7===1){ cls+=' miss'; st='漏'; }
+    else { cls+=' ok'; st='✓'; }
+    if(d===23) cls+=' today';
+    h+=`<span class="${cls}">${d}<span class="st">${st}</span></span>`;
+  }
+  return h+'</div>';
+}
+
+/* ---- 打卡日历页（A/C 的二级页，与 B 成长同款日历） ---- */
+PAGES.calendar = function(){
+  return head('打卡日历') + `
+  <div class="body">
+    ${subjChips(state.calSubject,'setCalSubject')}
+    <div class="card">
+      <div class="rowline"><h3>9月 · ${state.calSubject}</h3><span class="sub">${child().name}</span></div>
+      ${calendarGrid(state.calSubject)}
+      <div class="legend">
+        <span><i style="background:#E5F8EE"></i>已打卡</span>
+        <span><i style="background:#FDEBEB"></i>漏卡</span>
+        <span><i style="background:#F6F6F6;border:1px solid #E8E8E8"></i>休息日</span>
+        <span><i style="background:#FFF4E3"></i>无作业日</span>
+      </div>
+      <div class="note">休息日无义务不加不断；假期 Session 期间未打卡会断（见 ADR 0004）。</div>
+    </div>
+    <div class="card"><div class="rowline"><h3>各科连续打卡</h3><span class="sub">详情在成长数据里</span></div></div>
+    <div style="height:12px"></div>
+  </div>`;
+};
+
+/* ---- 班级列表 ---- */
+PAGES.classList = function(){
+  const idx=VARIANTS[state.variant].tabs.indexOf('classList');
+  return head('班级') + `
+  <div class="body">
+    <div class="dashbox" onclick="toast('演示边界：搜索公开班 / 邀请码加入')">＋ 搜索公开班 · 邀请码加入</div>
+    ${D.classes.map(c=>{
+      const ch=D.children.find(x=>x.id===c.child);
+      const cnt=(D.sessions[c.child]||[]).length;
+      return `<div class="card" onclick="openClass('${c.id}')" role="button">
+        <div class="rowline">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="avatar" style="background:#5B8DEF">${c.name[0]}</div>
+            <div><h3>${c.name}</h3><div class="sub">${ch.name} 在班 · 今日 ${cnt} 科作业</div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <span class="chip ${c.role==='管理员'?'on':''}">${c.role}</span>
+            <span class="sub">›</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
+    <div style="height:12px"></div>
+  </div>` + tabbar(idx);
+};
+function openClass(cid){ state.openClass=cid; state.classTab='hw'; go('classDetail'); }
+
+/* ---- 班级详情（A：无资料段；B/C：资料是内页签） ---- */
+PAGES.classDetail = function(){
+  const c=classOf(state.openClass);
+  const isAdmin=c.role==='管理员';
+  const withLib = state.variant!=='A';
+  const tabs = withLib ? ['hw','mat','mem','tb'] : ['hw','mem','tb'];
+  const tabName = {hw:'作业', mat:'资料', mem:'成员', tb:'教材'};
+  let body='';
+  if(state.classTab==='hw'){
+    const ch=D.children.find(x=>x.id===c.child);
+    const list=D.sessions[c.child]||[];
+    body=`
+      <div class="card" style="margin-top:12px">
+        <div class="rowline"><h3>今天 · ${D.date}</h3><span class="sub">${list.length} 科</span></div>
+        ${list.map(s=>{
+          const done=state.checkedIn[cinKey(c.child,s.subject)];
+          return `<div class="rowline" style="padding:8px 0;border-bottom:1px solid var(--pline)">
+            <span style="font-size:14px">${s.subject} <span class="sub">${s.todos.length} 条待办</span></span>
+            <span class="badge ${done?'new':''}" style="${done?'':'background:#F6F6F6;color:#999;border:1px solid #E8E8E8'}">${done?'已打卡':'未打卡'}</span>
+          </div>`;
+        }).join('')}
+        <div class="rowline" style="padding-top:10px">
+          <button class="btn ghost" style="width:auto;padding:7px 14px;font-size:13px" onclick="toast('当日已有 Session → 409 no_homework_day_conflict（此处仅演示）')">标记无作业日</button>
+          ${isAdmin?`<button class="btn" style="width:auto;padding:7px 18px;font-size:13px" onclick="go('paste')">＋ 发作业</button>`:''}
+        </div>
+      </div>
+      <div class="card">
+        <div class="rowline"><h3>昨天 · 9月22日</h3></div>
+        <div class="rowline" style="padding:8px 0"><span style="font-size:14px">语文 <span class="sub">2 条待办</span></span><span class="sub">已打卡 ✓</span></div>
+        <div class="rowline" style="padding:8px 0"><span style="font-size:14px">数学 <span class="sub">1 条待办</span></span><span class="sub">已打卡 ✓</span></div>
+      </div>
+      ${isAdmin?`<div class="dashbox" onclick="go('paste')">＋ 补录往日作业 / 追加今日作业</div>`:''}`;
+  } else if(state.classTab==='mat'){
+    body = matList(state.openClass);
+  } else if(state.classTab==='mem'){
+    body=`<div class="card" style="margin-top:12px">
+      ${D.members.map(m=>`<div class="rowline" style="padding:9px 0;border-bottom:1px solid var(--pline)"><span style="font-size:14px">${m}</span><span class="sub">›</span></div>`).join('')}
+      <div class="rowline" style="padding-top:12px">
+        <button class="btn ghost" style="width:auto;padding:7px 14px;font-size:13px" onclick="toast('审批开关 join_approval 的申请列表')">加入审批</button>
+        <button class="btn" style="width:auto;padding:7px 18px;font-size:13px" onclick="toast('小程序码 scene=inviteCode')">邀请码 / 二维码</button>
+      </div>
+    </div>`;
+  } else if(state.classTab==='tb'){
+    body=`<div class="card" style="margin-top:12px">
+      ${(D.textbooks[state.openClass]||[]).map(t=>`
+        <div class="rowline" style="padding:9px 0;border-bottom:1px solid var(--pline)">
+          <span style="font-size:14px">${t.subject} <span class="sub">${t.name||'未选择'}</span></span>
+          <button class="chip" onclick="toast('演示边界：从全局教材库选择')">更换</button>
+        </div>`).join('')}
+      <div class="note">教材来自全局库，按科目为本班选用；单元是资料归纳的锚点。</div>
+    </div>`;
+  }
+  const idx = VARIANTS[state.variant].tabs.indexOf('classList');
+  return head(c.name) + `
+  <div class="body">
+    <div style="display:flex;gap:0;margin:10px 12px 0;background:var(--pcard);border:1px solid var(--pline);border-radius:10px;overflow:hidden">
+      ${tabs.map(t=>`<button style="flex:1;padding:9px 0;border:none;background:${state.classTab===t?'#07C160':'transparent'};color:${state.classTab===t?'#fff':'#666'};font-size:13.5px" onclick="setClassTab('${t}')">${tabName[t]}</button>`).join('')}
+    </div>
+    ${body}
+    <div style="height:12px"></div>
+  </div>`;
+};
+function setClassTab(t){ state.classTab=t; render(); }
+
+/* ---- 资料列表内容（班级内 / A 资料库共用） ---- */
+function matList(cid){
+  const tbs=D.textbooks[cid]||[];
+  let h='<div style="margin-top:12px">';
+  tbs.forEach(t=>{
+    if(t.name){
+      h+=`<div class="card" onclick="openTextbook('${cid}','${t.subject}')" role="button">
+        <div class="rowline">
+          <div><h3>${t.subject} · ${t.name}</h3><div class="sub">${t.units.length} 个单元 · ${t.units.reduce((a,u)=>a+u.items.length,0)} 份资料</div></div>
+          <span class="sub">›</span>
+        </div></div>`;
+    } else {
+      h+=`<div class="card" style="opacity:.6">
+        <div class="rowline"><div><h3>${t.subject}</h3><div class="sub">本班还没选用教材——资料按单元归纳，先选教材</div></div>
+        <button class="chip" onclick="setClassTab('tb')">去选择</button></div></div>`;
+    }
+  });
+  return h+'</div>';
+}
+
+/* ---- A 资料库 Tab ---- */
+PAGES.library = function(){
+  const idx=VARIANTS[state.variant].tabs.indexOf('library');
+  return head('资料库') + `
+  <div class="body">
+    <div style="display:flex;gap:8px;margin:10px 12px 0">
+      ${D.classes.map(c=>`<button class="chip ${state.libClass===c.id?'on':''}" onclick="setLibClass('${c.id}')">${c.name}</button>`).join('')}
+    </div>
+    ${matList(state.libClass)}
+    <div class="note">资料先审后显：pending / blocked 对成员不可见；图片视频走预签名 GET URL 播放。</div>
+    <div style="height:12px"></div>
+  </div>` + tabbar(idx);
+};
+function setLibClass(cid){ state.libClass=cid; render(); }
+function openTextbook(cid,subj){ go('units',{cid,subj}); }
+
+/* ---- 单元列表 ---- */
+PAGES.units = function(ctx){
+  const tb=(D.textbooks[ctx.cid]||[]).find(t=>t.subject===ctx.subj);
+  return head(tb.subject+' · '+tb.name) + `
+  <div class="body">
+    ${tb.units.map((u,i)=>`
+      <div class="card" onclick="go('unitPage',{cid:'${ctx.cid}',subj:'${ctx.subj}',ui:${i}})" role="button">
+        <div class="rowline">
+          <div><h3>${u.name}</h3><div class="sub">${u.items.length} 份资料</div></div>
+          <span class="sub">›</span>
+        </div></div>`).join('')}
+    <div style="height:12px"></div>
+  </div>`;
+};
+
+/* ---- 单元资料 ---- */
+PAGES.unitPage = function(ctx){
+  const tb=(D.textbooks[ctx.cid]||[]).find(t=>t.subject===ctx.subj);
+  const u=tb.units[ctx.ui];
+  const icon={video:'▶', image:'▣', text:'≡'};
+  const tname={video:'视频', image:'图片', text:'文本'};
+  return head(u.name) + `
+  <div class="body">
+    ${u.items.map((it,i)=>{
+      const [type,title,meta]=it;
+      if(type==='image'){
+        return `<div class="card" style="padding:0;overflow:hidden">
+          <div class="mockimg" style="height:150px;border-radius:0;border-bottom:1px solid var(--pline)" onclick="openViewer(${JSON.stringify(it).replace(/"/g,'&quot;')})">图片 · ${title}</div>
+          <div class="rowline" style="padding:10px 12px"><span style="font-size:13.5px">${title}</span><span class="sub">点击放大</span></div>
+        </div>`;
+      }
+      return `<div class="card" onclick="openViewer(${JSON.stringify(it).replace(/"/g,'&quot;')})" role="button">
+        <div class="rowline">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:44px;height:44px;border-radius:9px;background:#F0F0F0;display:flex;align-items:center;justify-content:center;font-size:17px">${icon[type]}</div>
+            <div><div style="font-size:14px">${title}</div><div class="sub">${tname[type]}${meta?' · '+meta:''}</div></div>
+          </div><span class="sub">›</span>
+        </div></div>`;
+    }).join('')}
+    <div style="height:12px"></div>
+  </div>`;
+};
+
+/* ---- 媒体查看器（弹层） ---- */
+function openViewer(item){
+  const [type,title,meta]=item;
+  const scr=$screen();
+  let v;
+  if(type==='video'){
+    v=`<div class="viewer">
+      <div class="vhead"><button onclick="closeViewer()" style="background:none;border:none;color:#fff;font-size:20px">‹</button><span style="font-size:13px">${title}</span><span style="width:20px"></span></div>
+      <div class="vbody">
+        <div style="width:220px;aspect-ratio:16/9;background:#1E1E1E;border-radius:10px;display:flex;align-items:center;justify-content:center">
+          <div class="playbtn" onclick="toast('真实实现：预签名 GET URL · wx video 组件 · 原生支持 Range 拖动')">▶</div>
+        </div>
+        <span class="vlabel">${meta||''} · 全屏 / 竖屏均可</span>
+      </div>
+      <div class="vctrl">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span>▶</span><input type="range" value="34" aria-label="进度"><span style="font-variant-numeric:tabular-nums">03:2${'4'}</span>
+        </div>
+        <div style="margin-top:6px">封面取自上传时的 thumb · 预签名 URL 1~2 小时有效</div>
+      </div>
+    </div>`;
+  } else if(type==='image'){
+    v=`<div class="viewer">
+      <div class="vhead"><button onclick="closeViewer()" style="background:none;border:none;color:#fff;font-size:20px">‹</button><span style="font-size:13px">${title}</span><span style="width:20px"></span></div>
+      <div class="vbody">
+        <div class="mockimg" style="width:250px;aspect-ratio:3/4;border-radius:8px">图片 · ${title}</div>
+        <span class="vlabel">双指缩放 · 预签名 GET URL</span>
+      </div>
+    </div>`;
+  } else {
+    v=`<div class="viewer" style="background:#fff;color:#111">
+      <div class="vhead" style="color:#111"><button onclick="closeViewer()" style="background:none;border:none;color:#111;font-size:20px">‹</button><span style="font-size:13px">${title}</span><span style="width:20px"></span></div>
+      <div class="vbody" style="color:#111;padding:0 24px 40px;align-items:flex-start">
+        <p style="font-size:15px;line-height:2">《秋天》<br>天气凉了，树叶黄了，一片片叶子从树上落下来。<br>天空那么蓝，那么高。一群大雁往南飞，一会儿排成个"人"字，一会儿排成个"一"字。<br>啊！秋天来了！</p>
+      </div>
+    </div>`;
+  }
+  const ov=document.createElement('div'); ov.id='viewer'; ov.innerHTML=v;
+  scr.appendChild(ov);
+}
+function closeViewer(){ const el=document.getElementById('viewer'); if(el) el.remove(); }
+
+/* ---- 我的 ---- */
+PAGES.me = function(){
+  const idx=VARIANTS[state.variant].tabs.indexOf('me');
+  const growthRow = state.variant==='C' ? `<div class="rowline" style="padding:11px 0;border-bottom:1px solid var(--pline)" onclick="go('calendar')" role="button"><span style="font-size:14px">${child().name}的成长 · 打卡日历</span><span class="sub">›</span></div>` : '';
+  return head('我的') + `
+  <div class="body">
+    <div class="card" style="display:flex;align-items:center;gap:12px;margin-top:12px">
+      <div class="avatar" style="background:#5B8DEF;width:46px;height:46px">瑶</div>
+      <div><div style="font-weight:600">${D.user.name} · ${D.user.tag}</div><div class="sub">微信登录 · STRIDE 认证</div></div>
+    </div>
+    <div class="card">
+      <div class="rowline" style="padding-bottom:8px"><h3>我的孩子</h3><button class="chip" onclick="toast('创建孩子 → 创建者自动成为监护人')">＋ 添加</button></div>
+      ${D.children.map(c=>{
+        const cls=D.classes.find(x=>x.child===c.id);
+        return `<div class="rowline" style="padding:9px 0;border-bottom:1px solid var(--pline)" onclick="toast('孩子管理：改名 / 头像 / 监护人邀请')" role="button">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="avatar" style="background:${c.color}">${c.name[0]}</div>
+            <span style="font-size:14px">${c.name} <span class="sub">${c.grade} · ${cls.name}</span></span>
+          </div><span class="sub">›</span></div>`;
+      }).join('')}
+      ${growthRow}
+    </div>
+    <div class="card">
+      ${[['监护人邀请','邀请另一位家长共同管理孩子'],['上学日历','2026–2027 节假日 / 调休（verified 才生效）'],['设置','']].map(r=>
+        `<div class="rowline" style="padding:11px 0;border-bottom:1px solid var(--pline)" onclick="toast('${r[0]}：二级页，线框略')" role="button">
+          <span style="font-size:14px">${r[0]}</span><span class="sub">${r[1]} ›</span></div>`).join('')}
+    </div>
+    <div style="height:12px"></div>
+  </div>` + tabbar(idx);
+};
+
+/* ---- 发作业：粘贴 ---- */
+PAGES.paste = function(){
+  return head('发作业') + `
+  <div class="body">
+    <div class="card" style="margin-top:12px">
+      <div class="rowline" style="margin-bottom:8px"><span class="sub">日期</span><span style="font-size:14px">${D.date}（可补录往日）</span></div>
+      <div class="hr"></div>
+      <div class="sub" style="margin-bottom:6px">粘贴老师原文（可混科，一次搞定）</div>
+      <textarea id="rawtext" style="width:100%;min-height:120px;border:1px solid var(--pline);border-radius:8px;padding:10px;font:inherit;font-size:14px" aria-label="老师原文">${D.parseText}</textarea>
+      <button class="btn" style="margin-top:12px" onclick="startParse()">开始解析</button>
+      <button class="btn ghost" style="margin-top:8px" onclick="toast('不经过 AI：直接进手填页（一行一条 · 单科目）')">不用 AI，手动填写</button>
+    </div>
+    <div class="note">解析同步调用（约 3~15 秒），失败可重试（同模型 · 温度 0.3），仍失败降级手填。</div>
+  </div>`;
+};
+function startParse(){
+  go('parsing');
+  if(parseTimer) clearTimeout(parseTimer);
+  parseTimer=setTimeout(()=>{ const s=state.stacks[state.variant]; s.pop(); go('confirm'); }, 1100);
+}
+PAGES.parsing = function(){
+  return head('发作业') + `
+  <div class="body" style="display:flex;align-items:center;justify-content:center">
+    <div style="text-align:center">
+      <div style="width:44px;height:44px;border:4px solid #E5E5E5;border-top-color:#07C160;border-radius:50%;margin:0 auto;animation:spin 0.9s linear infinite"></div>
+      <div style="margin-top:14px;font-size:14px">DeepSeek 正在拆作业…</div>
+      <div class="sub" style="margin-top:4px">deepseek-chat · JSON mode · 温度 0</div>
+    </div>
+  </div>
+  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
+};
+
+/* ---- 发作业：确认页（012 定稿形态） ---- */
+PAGES.confirm = function(){
+  let groups='';
+  D.parseGroups.forEach(g=>{
+    const isAppend=g.target==='append';
+    groups+=`<div class="card">
+      <div class="rowline">
+        <div style="display:flex;align-items:center;gap:7px"><h3>${g.subject}</h3>
+          <span class="badge ${isAppend?'append':'new'}">${isAppend?'追加 · 已有 '+g.existTodos.length+' 条':'新建'}</span></div>
+        <span class="sub">≈${g.todos.reduce((a,t)=>a+(t[1]||0),0)} 分钟</span>
+      </div>
+      ${isAppend? g.existTodos.map(t=>`<div class="todo frozen"><span class="box" style="border-color:#D9D9D9;background:#E9E9E9"></span><span class="tt sub">${t}</span></div>`).join('') : ''}
+      ${g.todos.map((t,i)=>`<div class="todo on"><span class="box"></span><span class="tt" style="flex:1">${t[0]} <span class="sub">≈${t[1]}分钟</span></span><span class="sub" onclick="toast('编辑 / 删除 / 拖动排序（线框略）')">✎</span></div>`).join('')}
+      <button class="btn ghost" style="margin-top:6px;padding:7px;font-size:13px" onclick="toast('新增待办 · 科目随分组，可移到别的分组')">＋ 添加待办</button>
+    </div>`;
+  });
+  return head('解析确认') + `
+  <div class="body">
+    ${groups}
+    <div class="card">
+      <div class="sub" style="margin-bottom:6px">老师还提到（入 Session 备注 · 家长可见）</div>
+      <textarea style="width:100%;min-height:52px;border:1px solid var(--pline);border-radius:8px;padding:9px;font:inherit;font-size:13.5px" aria-label="老师还提到">${D.parseNotes}</textarea>
+    </div>
+    <details class="card"><summary style="font-size:13.5px">原文（会一起存档）</summary>
+      <p class="sub" style="margin-top:8px">${D.parseText}</p></details>
+    <div style="display:flex;gap:8px;margin:12px">
+      <button class="btn ghost" style="margin:0" onclick="back()">放弃</button>
+      <button class="btn ghost" style="margin:0" onclick="toast('重跑同 prompt · 温度 0.3')">重新解析</button>
+      <button class="btn" style="margin:0" onclick="submitHomework()">确认入库</button>
+    </div>
+    <div style="height:12px"></div>
+  </div>`;
+};
+function submitHomework(){
+  const g=D.parseGroups[1];
+  g.existTodos.push(g.todos[0][0]);
+  g.todos=[];
+  go('postDone');
+}
+PAGES.postDone = function(){
+  return head('发作业') + `
+  <div class="body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+    <div style="width:64px;height:64px;border-radius:50%;background:#E5F8EE;color:#07C160;font-size:30px;display:flex;align-items:center;justify-content:center">✓</div>
+    <div style="font-size:17px;font-weight:600;margin-top:14px">已入库</div>
+    <div class="sub" style="margin-top:4px;line-height:2">语文 · 新建 Session（2 条待办）<br>数学 · 追加 1 条到已有 Session</div>
+    <button class="btn" style="margin-top:20px;width:200px" onclick="state.stacks[state.variant]=[{id:VARIANTS[state.variant].tabs[0]}];switchTab(1)">返回班级</button>
+  </div>`;
+};
+
+/* ---- 打卡弹层 / 成功 / 卡片 ---- */
+function openCheckin(cid,subj){
+  const c=D.children.find(x=>x.id===cid);
+  const scr=$screen();
+  const ov=document.createElement('div'); ov.id='sheet'; ov.className='sheetmask';
+  ov.innerHTML=`<div class="sheet">
+    <h3>打卡 · ${c.name} · ${subj}</h3>
+    <div class="sub" style="text-align:center;margin-top:4px">今天完成的是「${subj}」作业</div>
+    <button class="btn ghost" style="margin-top:16px" onclick="toast('选视频 → STS 直传 → confirm → 携 videoUploadId 打卡（媒体链路线框略）')">＋ 添加打卡视频（可选）</button>
+    <button class="btn" style="margin-top:8px" onclick="doCheckin('${cid}','${subj}')">跳过视频，直接打卡</button>
+    <button class="btn ghost" style="margin-top:8px;background:none;border:none;color:#999" onclick="closeSheet()">再想想</button>
+  </div>`;
+  scr.appendChild(ov);
+}
+function closeSheet(){ const el=document.getElementById('sheet'); if(el) el.remove(); }
+function doCheckin(cid,subj){
+  closeSheet();
+  state.checkedIn[cinKey(cid,subj)]=true;
+  go('success',{cid,subj});
+}
+PAGES.success = function(ctx){
+  const c=D.children.find(x=>x.id===ctx.cid);
+  const s=(D.sessions[ctx.cid]||[]).find(x=>x.subject===ctx.subj);
+  const n=s.streak+1;
+  return head('打卡成功') + `
+  <div class="body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+    <div style="width:64px;height:64px;border-radius:50%;background:#E5F8EE;color:#07C160;font-size:30px;display:flex;align-items:center;justify-content:center">✓</div>
+    <div style="font-size:17px;font-weight:600;margin-top:14px">${c.name} · ${ctx.subj} · 打卡成功</div>
+    <div class="sub" style="margin-top:4px">连续打卡 <b style="color:#E8A23D">×${n}</b> 天（+1，不可撤销）</div>
+    <button class="btn" style="margin-top:20px;width:220px" onclick="go('card',{cid:'${ctx.cid}',subj:'${ctx.subj}'})">查看打卡卡片</button>
+  </div>`;
+};
+PAGES.card = function(ctx){
+  const c=D.children.find(x=>x.id===ctx.cid);
+  const s=(D.sessions[ctx.cid]||[]).find(x=>x.subject===ctx.subj);
+  const n=s.streak+1;
+  return head('打卡卡片') + `
+  <div class="body">
+    <div class="poster">
+      <div class="pband"></div>
+      <div class="pchild">${c.name}</div>
+      <div class="pdate">${D.date} · ${ctx.subj}</div>
+      <div class="pnum">${n}</div>
+      <div class="plabel">连续打卡天数</div>
+      <div class="plist">${s.todos.map(t=>`<div>✓ ${t[0]}</div>`).join('')}</div>
+      <div class="pfoot">作业打卡 · 习惯养成</div>
+    </div>
+    <div style="display:flex;gap:8px;margin:0 12px">
+      <button class="btn ghost" style="margin:0" onclick="toast('保存到相册（卡片异步生成 · 轮询至就绪）')">保存到相册</button>
+      <button class="btn" style="margin:0" onclick="toast('转发给朋友 / 群（shareAppMessage 携海报）')">分享</button>
+    </div>
+    <div class="note">卡片内容口径：孩子名 · 日期 · 连续打卡天数 · 完成的待办 · 科目。不含预估时长与「老师还提到」。</div>
+  </div>`;
+};
+
+/* ================= 主渲染 ================= */
+function render(){
+  // 侧栏：变体主张
+  const v=VARIANTS[state.variant];
+  document.getElementById('vnote').innerHTML=
+    `<h2>当前变体 · ${v.name}</h2>
+     <div class="claim">${v.claim}</div>
+     <div class="route">${v.routes}</div>`;
+  document.getElementById('vlab').innerHTML=
+    `${v.name}<small>${v.sub} · 键盘 ←/→</small>`;
+  // 侧栏：状态行
+  const [a,b]=totalTicked(state.child);
+  const cin=Object.keys(state.checkedIn).length;
+  document.getElementById('statusline').innerHTML=
+    `变体 <b>${state.variant}</b> · 孩子 <b>${child().name}</b> · 已勾 <b>${a}/${b}</b> · 已打卡 <b>${cin}</b> 科 · 页面栈深 <b>${state.stacks[state.variant].length}</b>`;
+  // 手机
+  const st=state.stacks[state.variant];
+  const top=st[st.length-1];
+  $screen().innerHTML =
+    `<div class="scr">
+      <div class="statusbar"><span>9:41</span><span>●●● ᯤ 🔋</span></div>
+      <div class="capsule"><span>•••</span><span>◉</span></div>
+      ${(PAGES[top.id]||PAGES.today)(top.ctx||{})}
+    </div>`;
+}
+
+/* init */
+(function(){
+  const m=location.search.match(/[?&]variant=([A-C])/);
+  if(m) state.variant=m[1];
+  if(!VARIANTS[state.variant].tabs.includes(state.stacks[state.variant][0].id)){
+    state.stacks[state.variant]=[{id:VARIANTS[state.variant].tabs[0]}];
+  }
+  render();
+})();
+</script>
+</body>
+</html>
